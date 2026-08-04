@@ -1,6 +1,6 @@
 {
-    "name": "mobipet_mobile",
-    "short_name": "mobipet_mobile",
+    "name": "MOBIPET Monitoramento",
+    "short_name": "MOBIPET",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
