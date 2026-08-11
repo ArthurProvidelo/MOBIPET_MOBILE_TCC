@@ -1,17 +1,33 @@
-enum StatusAgendamento { agendado, emAndamento, concluido, cancelado }
+enum StatusAgendamento { agendado, concluido, cancelado }
 
 class Agendamento {
   final String id;
-  final String petName;
-  final String serviceName;
+  final String petId;
+  final String servicoId;
   final DateTime dateTime;
   final StatusAgendamento status;
+  final String? atendimentoId;
 
-  Agendamento({
+  const Agendamento({
     required this.id,
-    required this.petName,
-    required this.serviceName,
+    required this.petId,
+    required this.servicoId,
     required this.dateTime,
     required this.status,
+    this.atendimentoId,
   });
+
+  Agendamento copyWith({
+    StatusAgendamento? status,
+    String? atendimentoId,
+  }) {
+    return Agendamento(
+      id: id,
+      petId: petId,
+      servicoId: servicoId,
+      dateTime: dateTime,
+      status: status ?? this.status,
+      atendimentoId: atendimentoId ?? this.atendimentoId,
+    );
+  }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/agendamento.dart';
-import '../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
 class CustomBadge extends StatelessWidget {
   final StatusAgendamento status;
@@ -17,10 +17,6 @@ class CustomBadge extends StatelessWidget {
         color = AppColors.info;
         label = 'Agendado';
         break;
-      case StatusAgendamento.emAndamento:
-        color = AppColors.warning;
-        label = 'Em andamento';
-        break;
       case StatusAgendamento.concluido:
         color = AppColors.success;
         label = 'Concluído';
@@ -34,7 +30,7 @@ class CustomBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

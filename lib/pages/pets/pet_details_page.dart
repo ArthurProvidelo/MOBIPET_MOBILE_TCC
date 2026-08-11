@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
-import '../widgets/custom_card.dart';
-import 'agendamento_flow_screen.dart';
+import '../../models/pet.dart';
+import '../../theme/app_colors.dart';
+import '../../widgets/custom_card.dart';
+import '../agendamentos/novo_agendamento_page.dart';
+import 'pet_form_page.dart';
 
-class PetDetailsScreen extends StatelessWidget {
-  final String petName;
-  final String imageUrl;
+class PetDetailsPage extends StatelessWidget {
+  final Pet pet;
 
-  const PetDetailsScreen({super.key, required this.petName, required this.imageUrl});
+  const PetDetailsPage({super.key, required this.pet});
 
   @override
   Widget build(BuildContext context) {
@@ -17,14 +18,22 @@ class PetDetailsScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => PetFormPage(mode: PetFormMode.edit, pet: pet)),
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(petName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: Text(pet.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               background: Stack(
                 fit: StackFit.expand,
                 children: [
                   Hero(
-                    tag: 'pet-image-$petName',
-                    child: Image.network(imageUrl, fit: BoxFit.cover),
+                    tag: 'pet-image-${pet.id}',
+                    child: Image.network(pet.imageUrl, fit: BoxFit.cover),
                   ),
                   const DecoratedBox(
                     decoration: BoxDecoration(
@@ -45,39 +54,33 @@ class PetDetailsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(pet.breed, style: const TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(child: _buildInfoTile('Sexo', 'Macho')),
+                      Expanded(child: _buildInfoTile('Sexo', pet.gender)),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildInfoTile('Peso', '28 kg')),
+                      Expanded(child: _buildInfoTile('Peso', '${pet.weight} kg')),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildInfoTile('Nascimento', '12/04/2021')),
+                      Expanded(child: _buildInfoTile('Nascimento', pet.birthDate)),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  Text('Observações & Cuidados Especial', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16)),
+                  Text('Observações & Cuidados Especiais', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16)),
                   const SizedBox(height: 12),
-                  const CustomCard(
+                  CustomCard(
                     child: Text(
-                      'Alergia leve a xampus com fragrância forte. O pet costuma ser dócil durante a tosa, porém necessita de cuidado extra ao cortar as unhas.',
-                      style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+                      pet.notes.isNotEmpty ? pet.notes : 'Nenhuma observação registrada.',
+                      style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
                     ),
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AgendamentoFlowScreen()));
-                      },
-                      icon: const Icon(Icons.calendar_month, color: Colors.white),
-                      label: const Text('Agendar Serviço', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => NovoAgendamentoPage(petIdPreSelecionado: pet.id)),
                     ),
+                    icon: const Icon(Icons.calendar_month),
+                    label: const Text('Agendar Serviço'),
                   ),
                 ],
               ),
@@ -94,7 +97,7 @@ class PetDetailsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         children: [

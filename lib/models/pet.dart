@@ -1,5 +1,6 @@
 class Pet {
   final String id;
+  final String donoId;
   final String name;
   final String breed;
   final String age;
@@ -9,8 +10,9 @@ class Pet {
   final String imageUrl;
   final String notes;
 
-  Pet({
+  const Pet({
     required this.id,
+    required this.donoId,
     required this.name,
     required this.breed,
     required this.age,
@@ -20,4 +22,28 @@ class Pet {
     required this.imageUrl,
     this.notes = '',
   });
+
+  Pet copyWith({
+    String? name,
+    String? breed,
+    String? age,
+    String? gender,
+    double? weight,
+    String? birthDate,
+    String? imageUrl,
+    String? notes,
+  }) {
+    return Pet(
+      id: id,
+      donoId: donoId,
+      name: name ?? this.name,
+      breed: breed ?? this.breed,
+      age: age ?? this.age,
+      gender: gender ?? this.gender,
+      weight: weight ?? this.weight,
+      birthDate: birthDate ?? this.birthDate,
+      imageUrl: imageUrl ?? this.imageUrl,
+      notes: notes ?? this.notes,
+    );
+  }
 }
