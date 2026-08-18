@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/atendimento.dart';
+import '../theme/app_colors.dart';
 
 abstract class StageUtils {
-  static String labelDe(EtapaAtendimento etapa) {
+  static String label(EtapaAtendimento etapa) {
     switch (etapa) {
       case EtapaAtendimento.checkIn:
         return 'Check-in';
@@ -23,30 +24,29 @@ abstract class StageUtils {
     }
   }
 
-  static IconData iconeDe(EtapaAtendimento etapa) {
+  static IconData icon(EtapaAtendimento etapa) {
     switch (etapa) {
       case EtapaAtendimento.checkIn:
-        return Icons.badge_outlined;
+        return Icons.login_rounded;
       case EtapaAtendimento.banho:
-        return Icons.shower_outlined;
+        return Icons.water_drop_rounded;
       case EtapaAtendimento.secagem:
-        return Icons.air_outlined;
+        return Icons.air_rounded;
       case EtapaAtendimento.tosa:
-        return Icons.content_cut;
+        return Icons.content_cut_rounded;
       case EtapaAtendimento.escovacao:
-        return Icons.brush_outlined;
+        return Icons.brush_rounded;
       case EtapaAtendimento.perfume:
-        return Icons.spa_outlined;
+        return Icons.spa_rounded;
       case EtapaAtendimento.prontoParaRetirada:
-        return Icons.inventory_2_outlined;
+        return Icons.inventory_2_rounded;
       case EtapaAtendimento.finalizado:
-        return Icons.check_circle_outline;
+        return Icons.check_circle_rounded;
     }
   }
 
-  static EtapaAtendimento? proximaEtapa(EtapaAtendimento etapaAtual) {
-    final index = EtapaAtendimento.values.indexOf(etapaAtual);
-    if (index >= EtapaAtendimento.values.length - 1) return null;
-    return EtapaAtendimento.values[index + 1];
+  static Color color(EtapaAtendimento etapa) {
+    if (etapa == EtapaAtendimento.finalizado) return AppColors.success;
+    return AppColors.primary;
   }
 }

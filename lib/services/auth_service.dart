@@ -1,51 +1,79 @@
 import '../models/usuario.dart';
-import 'mock_data.dart';
+import 'api_client.dart';
+import 'token_storage.dart';
 
-class AuthException implements Exception {
-  final String message;
-  AuthException(this.message);
-}
-
-/// Camada mockada de autenticação. Métodos e assinaturas foram desenhados
-/// para que, no futuro, o corpo de cada um seja trocado por uma chamada
-/// HTTP a uma API Laravel sem alterar quem os consome.
 class AuthService {
-  static const _delay = Duration(milliseconds: 700);
+  final ApiClient _client = ApiClient();
 
-  Usuario? _sessao;
+  Future<Usuario> login({required String email, required String senha}) async {
+    final resposta = await _client.post('/login', {'email': email, 'senha': senha});
+    await TokenStorage.salvar(resposta['token'] as String);
+    return Usuario.fromJson(resposta['cliente'] as Map<String, dynamic>);
+  }
 
-  Future<Usuario> login(String email, String senha) async {
-    await Future.delayed(_delay);
-    if (email.trim().toLowerCase() != MockData.usuario.email.toLowerCase() || senha.isEmpty) {
-      throw AuthException('E-mail ou senha inválidos');
+  Future<Usuario> criarConta({
+    required String nome,
+    required String cpf,
+    required String email,
+    required String telefone,
+    required String senha,
+    required String endereco,
+  }) async {
+    final resposta = await _client.post('/register', {
+      'nome': nome,
+      'cpf': cpf,
+      'email': email,
+      'telefone': telefone,
+      'senha': senha,
+      'endereco': endereco,
+    });
+    await TokenStorage.salvar(resposta['token'] as String);
+    return Usuario.fromJson(resposta['cliente'] as Map<String, dynamic>);
+  }
+
+  /// Retorna o cliente da sessão salva, ou null se não houver token ou ele
+  /// não for mais válido (ex: expirado/revogado no servidor).
+  Future<Usuario?> usuarioAtual() async {
+    final token = await TokenStorage.ler();
+    if (token == null) return null;
+    try {
+      final resposta = await _client.get('/me');
+      return Usuario.fromJson(resposta['cliente'] as Map<String, dynamic>);
+    } catch (_) {
+      await TokenStorage.limpar();
+      return null;
     }
-    _sessao = MockData.usuario;
-    return _sessao!;
   }
 
-  Future<Usuario> cadastrar({required String nome, required String email, required String senha}) async {
-    await Future.delayed(_delay);
-    final novo = Usuario(id: 'u_novo', nome: nome, email: email);
-    _sessao = novo;
-    return novo;
+  Future<Usuario> atualizarPerfil({
+    required String nome,
+    required String email,
+    required String telefone,
+    required String endereco,
+  }) async {
+    final resposta = await _client.put('/perfil', {
+      'nome': nome,
+      'email': email,
+      'telefone': telefone,
+      'endereco': endereco,
+    });
+    return Usuario.fromJson(resposta['cliente'] as Map<String, dynamic>);
   }
 
-  Future<void> recuperarSenha(String email) async {
-    await Future.delayed(_delay);
+  Future<void> alterarSenha({required String senhaAtual, required String novaSenha}) {
+    return _client.put('/senha', {'senha_atual': senhaAtual, 'nova_senha': novaSenha});
   }
 
-  Future<void> alterarSenha({required String senhaAtual, required String novaSenha}) async {
-    await Future.delayed(_delay);
-  }
-
-  Future<Usuario> atualizarPerfil(Usuario usuario) async {
-    await Future.delayed(_delay);
-    _sessao = usuario;
-    return usuario;
+  Future<void> recuperarSenha({required String email}) {
+    return _client.post('/esqueci-senha', {'email': email});
   }
 
   Future<void> logout() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    _sessao = null;
+    try {
+      await _client.post('/logout');
+    } catch (_) {
+      // Mesmo que a chamada falhe (ex: token já expirado), limpa localmente.
+    }
+    await TokenStorage.limpar();
   }
 }

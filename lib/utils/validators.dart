@@ -1,33 +1,52 @@
 abstract class Validators {
-  static String? obrigatorio(String? value, {String campo = 'Este campo'}) {
-    if (value == null || value.trim().isEmpty) return '$campo é obrigatório';
+  static String? nome(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Informe o nome';
+    if (value.trim().length < 2) return 'Nome muito curto';
     return null;
   }
 
   static String? email(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Informe seu e-mail';
-    final regex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (!regex.hasMatch(value.trim())) return 'Informe um e-mail válido';
+    if (value == null || value.trim().isEmpty) return 'Informe o e-mail';
+    final regex = RegExp(r'^[\w\.\-]+@[\w\-]+\.[a-zA-Z]{2,}$');
+    if (!regex.hasMatch(value.trim())) return 'E-mail inválido';
     return null;
   }
 
-  static String? senha(String? value, {int minLength = 6}) {
-    if (value == null || value.isEmpty) return 'Informe sua senha';
-    if (value.length < minLength) return 'A senha deve ter ao menos $minLength caracteres';
+  static String? senha(String? value) {
+    if (value == null || value.isEmpty) return 'Informe a senha';
+    if (value.length < 6) return 'Mínimo de 6 caracteres';
     return null;
   }
 
-  static String? Function(String?) confirmacao(String? Function() original, {String mensagem = 'As senhas não coincidem'}) {
-    return (value) {
-      if (value != original()) return mensagem;
-      return null;
-    };
+  static String? confirmarSenha(String? value, String senhaOriginal) {
+    if (value == null || value.isEmpty) return 'Confirme a senha';
+    if (value != senhaOriginal) return 'As senhas não coincidem';
+    return null;
   }
 
-  static String? numero(String? value, {String campo = 'Este campo'}) {
-    if (value == null || value.trim().isEmpty) return '$campo é obrigatório';
-    final normalized = value.replaceAll(',', '.');
-    if (double.tryParse(normalized) == null) return '$campo deve ser um número válido';
+  static String? telefone(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Informe o telefone';
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 10) return 'Telefone inválido';
+    return null;
+  }
+
+  static String? obrigatorio(String? value, [String mensagem = 'Campo obrigatório']) {
+    if (value == null || value.trim().isEmpty) return mensagem;
+    return null;
+  }
+
+  static String? peso(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Informe o peso';
+    final parsed = double.tryParse(value.replaceAll(',', '.'));
+    if (parsed == null || parsed <= 0) return 'Peso inválido';
+    return null;
+  }
+
+  static String? cpf(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Informe o CPF';
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length != 11) return 'CPF inválido';
     return null;
   }
 }

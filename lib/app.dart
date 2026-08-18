@@ -4,7 +4,9 @@ import 'pages/splash_page.dart';
 import 'state/agendamentos_provider.dart';
 import 'state/app_state.dart';
 import 'state/atendimento_provider.dart';
+import 'state/funcionarios_provider.dart';
 import 'state/pets_provider.dart';
+import 'state/servicos_provider.dart';
 import 'theme/app_theme.dart';
 
 class MobipetApp extends StatelessWidget {
@@ -18,9 +20,11 @@ class MobipetApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PetsProvider()),
         ChangeNotifierProvider(create: (_) => AgendamentosProvider()),
         ChangeNotifierProvider(create: (_) => AtendimentoProvider()),
+        ChangeNotifierProvider(create: (_) => ServicosProvider()),
+        ChangeNotifierProvider(create: (_) => FuncionariosProvider()),
       ],
       child: MaterialApp(
-        title: 'Mobipet',
+        title: 'MobiPet Monitoramento',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const SplashPage(),

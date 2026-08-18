@@ -4,161 +4,96 @@ import '../theme/app_colors.dart';
 import '../utils/date_formatters.dart';
 import '../utils/stage_utils.dart';
 
-/// Timeline da esteira de atendimento RFID. Usada tanto em modo resumido
-/// (Home) quanto em modo completo (Detalhes do Serviço) — ambas leem os
-/// mesmos getters de `Atendimento`, então nunca divergem entre si.
 class StageTimeline extends StatelessWidget {
   final Atendimento atendimento;
-  final bool compact;
+  final bool compacto;
 
-  const StageTimeline({super.key, required this.atendimento, this.compact = false});
+  const StageTimeline({super.key, required this.atendimento, this.compacto = false});
 
   @override
   Widget build(BuildContext context) {
-    return compact ? _buildCompact(context) : _buildFull(context);
-  }
-
-  Widget _buildCompact(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Etapa ${atendimento.etapaIndex + 1} de ${atendimento.totalEtapas}: ${StageUtils.labelDe(atendimento.etapaAtual)}',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary),
-            ),
-            Text(
-              '${(atendimento.progresso * 100).round()}%',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.primary),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: atendimento.progresso,
-            minHeight: 8,
-            backgroundColor: AppColors.border,
-            valueColor: AlwaysStoppedAnimation(
-              atendimento.isFinalizado ? AppColors.success : AppColors.primary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFull(BuildContext context) {
     final etapas = EtapaAtendimento.values;
+    final etapasVisiveis = compacto ? etapas.sublist(0, 4) : etapas;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${atendimento.etapaIndex + 1} de ${atendimento.totalEtapas} etapas concluídas',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary),
-            ),
-            Text(
-              '${(atendimento.progresso * 100).round()}%',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.primary),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: atendimento.progresso,
-            minHeight: 10,
-            backgroundColor: AppColors.border,
-            valueColor: AlwaysStoppedAnimation(
-              atendimento.isFinalizado ? AppColors.success : AppColors.primary,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        for (int i = 0; i < etapas.length; i++) _buildStep(etapas[i], i, i == etapas.length - 1),
-      ],
-    );
-  }
+      children: List.generate(etapasVisiveis.length, (index) {
+        final etapa = etapasVisiveis[index];
+        final isLast = index == etapasVisiveis.length - 1;
+        final concluida = index <= atendimento.etapaIndex;
+        final atual = etapa == atendimento.etapaAtual && !atendimento.isFinalizado;
+        final timestamp = atendimento.timestampDe(etapa);
+        final circleColor = concluida ? AppColors.primary : AppColors.border;
 
-  Widget _buildStep(EtapaAtendimento etapa, int index, bool isLast) {
-    final isConcluida = index < atendimento.etapaIndex || atendimento.isFinalizado && index <= atendimento.etapaIndex;
-    final isAtual = index == atendimento.etapaIndex && !atendimento.isFinalizado;
-    final timestamp = atendimento.timestampDe(etapa);
-
-    final Color circleColor = isConcluida
-        ? AppColors.success
-        : isAtual
-            ? AppColors.primary
-            : AppColors.border;
-    final Color lineColor = isConcluida ? AppColors.success : AppColors.border;
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isConcluida || isAtual ? circleColor : Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: circleColor, width: 2),
-                ),
-                child: Icon(
-                  isConcluida ? Icons.check : StageUtils.iconeDe(etapa),
-                  size: 16,
-                  color: isConcluida || isAtual ? Colors.white : AppColors.textSecondary,
-                ),
-              ),
-              if (!isLast) Expanded(child: Container(width: 2, color: lineColor)),
-            ],
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 22, top: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Column(
                 children: [
-                  Text(
-                    StageUtils.labelDe(etapa),
-                    style: TextStyle(
-                      fontWeight: isAtual ? FontWeight.w700 : FontWeight.w600,
-                      fontSize: 14,
-                      color: isAtual || isConcluida ? AppColors.textPrimary : AppColors.textSecondary,
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: atual ? 34 : 28,
+                    height: atual ? 34 : 28,
+                    decoration: BoxDecoration(
+                      color: concluida ? circleColor : AppColors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: concluida ? circleColor : AppColors.border, width: 2),
+                      boxShadow: atual
+                          ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 10, spreadRadius: 1)]
+                          : null,
+                    ),
+                    child: Icon(
+                      concluida ? (atual ? StageUtils.icon(etapa) : Icons.check_rounded) : StageUtils.icon(etapa),
+                      size: atual ? 18 : 14,
+                      color: concluida ? AppColors.white : AppColors.textSecondary,
                     ),
                   ),
-                  if (timestamp != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        DateFormatters.hora(timestamp),
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                      ),
-                    )
-                  else if (isAtual)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
-                      child: Text(
-                        'Em andamento…',
-                        style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
+                  if (!isLast)
+                    Expanded(
+                      child: Container(
+                        width: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 2),
+                        color: index < atendimento.etapaIndex ? AppColors.primary : AppColors.border,
                       ),
                     ),
                 ],
               ),
-            ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: isLast ? 0 : 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        StageUtils.label(etapa),
+                        style: TextStyle(
+                          fontWeight: concluida ? FontWeight.w600 : FontWeight.w500,
+                          color: concluida ? AppColors.textPrimary : AppColors.textSecondary,
+                          fontSize: 15,
+                        ),
+                      ),
+                      if (timestamp != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            DateFormatters.hora(timestamp),
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        )
+                      else if (atual)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Text('Em andamento', style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }),
     );
   }
 }

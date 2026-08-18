@@ -24,78 +24,86 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _enviar() async {
     if (!_formKey.currentState!.validate()) return;
-    await context.read<AppState>().recuperarSenha(_emailController.text.trim());
+    final appState = context.read<AppState>();
+    final sucesso = await appState.recuperarSenha(email: _emailController.text);
     if (!mounted) return;
-    setState(() => _enviado = true);
+    if (sucesso) {
+      setState(() => _enviado = true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(appState.erro ?? 'Erro ao enviar e-mail')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AppState>().isLoading;
+    final carregando = context.watch<AppState>().carregando;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Recuperar senha')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _enviado ? _buildSucesso() : _buildForm(isLoading),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+          child: _enviado ? _buildSucesso(context) : _buildFormulario(context, carregando),
         ),
       ),
     );
   }
 
-  Widget _buildForm(bool isLoading) {
-    return Form(
-      key: _formKey,
+  Widget _buildFormulario(BuildContext context, bool carregando) {
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Esqueceu a senha?', style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 8),
+            Text(
+              'Informe seu e-mail e enviaremos as instruções de recuperação.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 28),
+            AppTextField(
+              label: 'E-mail',
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              prefixIcon: Icons.mail_outline_rounded,
+              validator: Validators.email,
+            ),
+            const SizedBox(height: 28),
+            PrimaryButton(label: 'Enviar instruções', onPressed: _enviar, loading: carregando),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSucesso(BuildContext context) {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.lock_reset_outlined, size: 48, color: AppColors.primary),
-          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), shape: BoxShape.circle),
+            child: const Icon(Icons.mark_email_read_outlined, size: 44, color: AppColors.success),
+          ),
+          const SizedBox(height: 24),
+          Text('E-mail enviado!', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
           Text(
-            'Informe o e-mail cadastrado e enviaremos um link para redefinir sua senha.',
+            'Verifique sua caixa de entrada para redefinir sua senha.',
             style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
-          AppTextField(
-            controller: _emailController,
-            label: 'E-mail',
-            prefixIcon: Icons.email_outlined,
-            keyboardType: TextInputType.emailAddress,
-            validator: Validators.email,
-          ),
-          const SizedBox(height: 24),
-          PrimaryButton(label: 'Enviar link', onPressed: _submit, loading: isLoading),
+          const SizedBox(height: 28),
+          PrimaryButton(label: 'Voltar ao login', onPressed: () => Navigator.of(context).pop()),
         ],
       ),
-    );
-  }
-
-  Widget _buildSucesso() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), shape: BoxShape.circle),
-          child: const Icon(Icons.mark_email_read_outlined, size: 48, color: AppColors.success),
-        ),
-        const SizedBox(height: 20),
-        const Text(
-          'Link enviado!',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.textPrimary),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Verifique a caixa de entrada de ${_emailController.text} para redefinir sua senha.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 28),
-        PrimaryButton(label: 'Voltar ao login', onPressed: () => Navigator.of(context).pop()),
-      ],
     );
   }
 }

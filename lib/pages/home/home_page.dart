@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/agendamento.dart';
-import '../../services/mock_data.dart';
 import '../../state/agendamentos_provider.dart';
 import '../../state/app_state.dart';
 import '../../state/atendimento_provider.dart';
 import '../../state/pets_provider.dart';
+import '../../state/servicos_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/date_formatters.dart';
-import '../../utils/stage_utils.dart';
-import '../../widgets/custom_badge.dart';
 import '../../widgets/custom_card.dart';
-import '../../widgets/empty_state.dart';
-import '../../widgets/pet_card.dart';
-import '../../widgets/primary_button.dart';
+import '../../widgets/loading_view.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/stage_badge.dart';
 import '../../widgets/stage_timeline.dart';
-import '../agendamentos/detalhes_servico_page.dart';
-import '../agendamentos/novo_agendamento_page.dart';
+import '../agendamentos/agendamentos_page.dart';
 import '../pets/pet_details_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -25,62 +21,85 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final usuario = context.watch<AppState>().currentUser;
+    final usuario = context.watch<AppState>().usuario;
+    final atendimentoProvider = context.watch<AtendimentoProvider>();
     final petsProvider = context.watch<PetsProvider>();
     final agendamentosProvider = context.watch<AgendamentosProvider>();
+    final servicosProvider = context.watch<ServicosProvider>();
+
+    if (usuario == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final primeiroNome = usuario.nome.split(' ').first;
+    final saudacao = _saudacao();
 
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
             await Future.wait([
-              context.read<PetsProvider>().carregar(),
-              context.read<AgendamentosProvider>().carregar(),
-              context.read<AtendimentoProvider>().carregar(),
+              petsProvider.carregar(),
+              agendamentosProvider.carregar(),
+              atendimentoProvider.carregar(),
+              servicosProvider.carregar(),
             ]);
           },
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Olá, ${usuario?.primeiroNome ?? ''}',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Tudo certo com seus pets hoje?', style: Theme.of(context).textTheme.bodyMedium),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('$saudacao,', style: Theme.of(context).textTheme.bodyMedium),
+                        Text(primeiroNome, style: Theme.of(context).textTheme.headlineSmall),
+                      ],
+                    ),
                   ),
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundImage: usuario?.avatarUrl != null ? NetworkImage(usuario!.avatarUrl!) : null,
-                    child: usuario?.avatarUrl == null ? const Icon(Icons.person) : null,
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.border, width: 1.5),
+                      color: AppColors.background,
+                    ),
+                    child: const Icon(Icons.person_outline_rounded, color: AppColors.primary),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-              const SectionHeader(title: 'Atendimento atual'),
-              const SizedBox(height: 12),
-              _buildAtendimentoAtual(context, petsProvider),
-              const SizedBox(height: 24),
+              _AtendimentoAtualCard(
+                provider: atendimentoProvider,
+                petsProvider: petsProvider,
+                servicosProvider: servicosProvider,
+              ),
+              const SizedBox(height: 28),
               SectionHeader(
                 title: 'Próximos agendamentos',
-                actionLabel: agendamentosProvider.proximos.isNotEmpty ? 'Ver todos' : null,
-                onAction: agendamentosProvider.proximos.isNotEmpty
-                    ? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NovoAgendamentoPage()))
-                    : null,
+                actionLabel: 'Ver todos',
+                onAction: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AgendamentosPage()),
+                ),
               ),
               const SizedBox(height: 12),
-              _buildProximosAgendamentos(context, agendamentosProvider, petsProvider),
-              const SizedBox(height: 24),
-              SectionHeader(title: 'Meus Pets (${petsProvider.pets.length})'),
-              const SizedBox(height: 12),
-              _buildPetsRow(context, petsProvider),
+              if (agendamentosProvider.carregando)
+                const Padding(padding: EdgeInsets.all(24), child: LoadingView())
+              else if (agendamentosProvider.proximos.isEmpty)
+                const CustomCard(
+                  child: Text('Nenhum agendamento futuro no momento.'),
+                )
+              else
+                ...agendamentosProvider.proximos.take(3).map(
+                      (a) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _AgendamentoResumo(agendamento: a, pets: petsProvider),
+                      ),
+                    ),
             ],
           ),
         ),
@@ -88,146 +107,146 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildAtendimentoAtual(BuildContext context, PetsProvider petsProvider) {
-    return Consumer<AtendimentoProvider>(
-      builder: (context, atendimentoProvider, _) {
-        if (atendimentoProvider.isLoading) {
-          return const CustomCard(child: SizedBox(height: 90, child: Center(child: CircularProgressIndicator())));
-        }
-        final atendimento = atendimentoProvider.atual;
-        if (atendimento == null) {
-          return const CustomCard(
-            child: EmptyState(
-              icon: Icons.pets_outlined,
-              title: 'Nenhum atendimento em andamento',
-              subtitle: 'Assim que seu pet fizer check-in no pet shop, o progresso aparece aqui.',
-            ),
-          );
-        }
-        final pet = petsProvider.porId(atendimento.petId);
-        final servico = MockData.servicos.firstWhere((s) => s.id == atendimento.servicoId);
-
-        return CustomCard(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => DetalhesServicoPage(atendimentoId: atendimento.id)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${servico.nome} · ${pet?.name ?? ''}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                ],
-              ),
-              const SizedBox(height: 16),
-              StageTimeline(atendimento: atendimento, compact: true),
-              const SizedBox(height: 16),
-              PrimaryButton(
-                label: atendimento.isFinalizado ? 'Atendimento finalizado' : 'Simular leitura RFID',
-                icon: Icons.nfc,
-                loading: atendimentoProvider.isAvancando,
-                onPressed: atendimento.isFinalizado
-                    ? null
-                    : () async {
-                        await atendimentoProvider.simularLeituraRfid();
-                        if (!context.mounted) return;
-                        final novo = atendimentoProvider.atual!;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              novo.isFinalizado
-                                  ? 'Atendimento finalizado! 🎉'
-                                  : 'Etapa avançada para: ${StageUtils.labelDe(novo.etapaAtual)}',
-                            ),
-                          ),
-                        );
-                      },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  String _saudacao() {
+    final hora = DateTime.now().hour;
+    if (hora < 12) return 'Bom dia';
+    if (hora < 18) return 'Boa tarde';
+    return 'Boa noite';
   }
+}
 
-  Widget _buildProximosAgendamentos(BuildContext context, AgendamentosProvider provider, PetsProvider petsProvider) {
-    if (provider.isLoading) {
-      return const CustomCard(child: SizedBox(height: 60, child: Center(child: CircularProgressIndicator())));
+class _AtendimentoAtualCard extends StatelessWidget {
+  final AtendimentoProvider provider;
+  final PetsProvider petsProvider;
+  final ServicosProvider servicosProvider;
+
+  const _AtendimentoAtualCard({required this.provider, required this.petsProvider, required this.servicosProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    if (provider.carregando) {
+      return const CustomCard(child: Padding(padding: EdgeInsets.all(12), child: LoadingView()));
     }
-    final proximos = provider.proximos.take(3).toList();
-    if (proximos.isEmpty) {
+
+    final atendimento = provider.atual;
+    if (atendimento == null) {
       return CustomCard(
-        child: EmptyState(
-          icon: Icons.event_available_outlined,
-          title: 'Nenhum agendamento futuro',
-          actionLabel: 'Agendar serviço',
-          onAction: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NovoAgendamentoPage())),
+        child: Row(
+          children: [
+            const Icon(Icons.event_available_outlined, color: AppColors.textSecondary, size: 28),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'Nenhum atendimento em andamento no momento.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ],
         ),
       );
     }
-    return Column(
-      children: [
-        for (final agendamento in proximos) ...[
-          _buildAgendamentoCard(context, agendamento, petsProvider),
-          const SizedBox(height: 12),
+
+    final pet = petsProvider.porId(atendimento.petId);
+    final servico = servicosProvider.porId(atendimento.servicoId);
+
+    return CustomCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
+                child: const Icon(Icons.pets_rounded, color: AppColors.primary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(pet?.name ?? 'Pet', style: Theme.of(context).textTheme.titleMedium),
+                    Text(servico?.nome ?? 'Serviço', style: Theme.of(context).textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+              if (pet != null)
+                IconButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => PetDetailsPage(petId: pet.id)),
+                  ),
+                  icon: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          StageProgressBar(
+            progresso: atendimento.progresso,
+            etapasConcluidas: atendimento.etapasConcluidas,
+            totalEtapas: atendimento.totalEtapas,
+          ),
+          const SizedBox(height: 18),
+          Align(alignment: Alignment.centerLeft, child: StageBadge(etapa: atendimento.etapaAtual)),
+          const SizedBox(height: 18),
+          const Divider(),
+          const SizedBox(height: 14),
+          StageTimeline(atendimento: atendimento, compacto: true),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: provider.avancando || atendimento.isFinalizado
+                  ? null
+                  : () => provider.simularLeituraRfid(),
+              icon: provider.avancando
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    )
+                  : const Icon(Icons.nfc_rounded, size: 18),
+              label: Text(atendimento.isFinalizado ? 'Atendimento concluído' : 'Simular leitura RFID'),
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+            ),
+          ),
         ],
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildAgendamentoCard(BuildContext context, Agendamento agendamento, PetsProvider petsProvider) {
-    final pet = petsProvider.porId(agendamento.petId);
-    final servico = MockData.servicos.firstWhere((s) => s.id == agendamento.servicoId);
+class _AgendamentoResumo extends StatelessWidget {
+  final Agendamento agendamento;
+  final PetsProvider pets;
+
+  const _AgendamentoResumo({required this.agendamento, required this.pets});
+
+  @override
+  Widget build(BuildContext context) {
+    final pet = pets.porId(agendamento.petId);
+
     return CustomCard(
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(servico.icone, color: AppColors.primary),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+            child: const Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 20),
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(servico.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 4),
-                Text(
-                  '${pet?.name ?? ''} · ${DateFormatters.relativoAoDia(agendamento.dateTime)}',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                ),
+                Text('${pet?.name ?? 'Pet'} · ${agendamento.servicoNome ?? 'Serviço'}', style: Theme.of(context).textTheme.titleMedium),
+                Text(DateFormatters.dataEHora(agendamento.dateTime), style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
-          CustomBadge(status: agendamento.status),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPetsRow(BuildContext context, PetsProvider petsProvider) {
-    if (petsProvider.pets.isEmpty) {
-      return const CustomCard(
-        child: EmptyState(icon: Icons.pets_outlined, title: 'Nenhum pet cadastrado ainda'),
-      );
-    }
-    return SizedBox(
-      height: 110,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: petsProvider.pets.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final pet = petsProvider.pets[index];
-          return PetCard(
-            pet: pet,
-            compact: true,
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PetDetailsPage(pet: pet))),
-          );
-        },
       ),
     );
   }

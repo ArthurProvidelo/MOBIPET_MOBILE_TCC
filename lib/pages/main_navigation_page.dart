@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import '../state/agendamentos_provider.dart';
 import '../state/atendimento_provider.dart';
 import '../state/pets_provider.dart';
+import '../state/servicos_provider.dart';
+import '../theme/app_colors.dart';
 import 'agendamentos/agendamentos_page.dart';
 import 'home/home_page.dart';
 import 'perfil/perfil_page.dart';
@@ -32,6 +35,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       context.read<PetsProvider>().carregar();
       context.read<AgendamentosProvider>().carregar();
       context.read<AtendimentoProvider>().carregar();
+      context.read<ServicosProvider>().carregar();
     });
   }
 
@@ -39,15 +43,38 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.pets_outlined), selectedIcon: Icon(Icons.pets), label: 'Meus Pets'),
-          NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Agendamentos'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
-        ],
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: SalomonBottomBar(
+            currentIndex: _currentIndex,
+            onTap: (index) => setState(() => _currentIndex = index),
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.textSecondary,
+            items: [
+              SalomonBottomBarItem(
+                icon: const Icon(Icons.home_rounded),
+                title: const Text('Home'),
+                selectedColor: AppColors.primary,
+              ),
+              SalomonBottomBarItem(
+                icon: const Icon(Icons.pets_rounded),
+                title: const Text('Meus Pets'),
+                selectedColor: AppColors.primary,
+              ),
+              SalomonBottomBarItem(
+                icon: const Icon(Icons.calendar_today_rounded),
+                title: const Text('Agendamentos'),
+                selectedColor: AppColors.primary,
+              ),
+              SalomonBottomBarItem(
+                icon: const Icon(Icons.person_rounded),
+                title: const Text('Perfil'),
+                selectedColor: AppColors.primary,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

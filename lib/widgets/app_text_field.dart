@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 
 class AppTextField extends StatefulWidget {
-  final TextEditingController? controller;
   final String label;
   final String? hint;
-  final IconData? prefixIcon;
+  final TextEditingController controller;
   final bool obscureText;
-  final TextInputType? keyboardType;
+  final TextInputType keyboardType;
+  final IconData? prefixIcon;
   final String? Function(String?)? validator;
   final int maxLines;
+  final bool enabled;
   final void Function(String)? onChanged;
 
   const AppTextField({
     super.key,
-    this.controller,
     required this.label,
+    required this.controller,
     this.hint,
-    this.prefixIcon,
     this.obscureText = false,
-    this.keyboardType,
+    this.keyboardType = TextInputType.text,
+    this.prefixIcon,
     this.validator,
     this.maxLines = 1,
+    this.enabled = true,
     this.onChanged,
   });
 
@@ -30,24 +31,25 @@ class AppTextField extends StatefulWidget {
 }
 
 class _AppTextFieldState extends State<AppTextField> {
-  late bool _obscured = widget.obscureText;
+  bool _obscured = true;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: widget.controller,
-      obscureText: _obscured,
+      obscureText: widget.obscureText && _obscured,
       keyboardType: widget.keyboardType,
       validator: widget.validator,
-      maxLines: widget.obscureText ? 1 : widget.maxLines,
+      maxLines: widget.maxLines,
+      enabled: widget.enabled,
       onChanged: widget.onChanged,
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
-        prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon, color: AppColors.textSecondary) : null,
+        prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon) : null,
         suffixIcon: widget.obscureText
             ? IconButton(
-                icon: Icon(_obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: AppColors.textSecondary),
+                icon: Icon(_obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                 onPressed: () => setState(() => _obscured = !_obscured),
               )
             : null,

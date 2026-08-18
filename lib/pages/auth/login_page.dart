@@ -18,7 +18,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'joao.silva@email.com');
+  final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
 
   @override
@@ -28,10 +28,10 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _entrar() async {
     if (!_formKey.currentState!.validate()) return;
     final appState = context.read<AppState>();
-    final sucesso = await appState.login(_emailController.text, _senhaController.text);
+    final sucesso = await appState.login(email: _emailController.text, senha: _senhaController.text);
     if (!mounted) return;
     if (sucesso) {
       Navigator.of(context).pushReplacement(
@@ -39,57 +39,56 @@ class _LoginPageState extends State<LoginPage> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(appState.errorMessage ?? 'Não foi possível entrar')),
+        SnackBar(content: Text(appState.erro ?? 'Erro ao entrar')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AppState>().isLoading;
+    final carregando = context.watch<AppState>().carregando;
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Spacer(),
+                const SizedBox(height: 24),
                 Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-                  child: const Icon(Icons.pets, size: 40, color: AppColors.primary),
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(Icons.pets_rounded, color: AppColors.white, size: 36),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Bem-vindo de volta',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24),
-                  textAlign: TextAlign.center,
-                ),
+                const SizedBox(height: 28),
+                Text('Bem-vindo de volta', style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 8),
                 Text(
-                  'Acompanhe o atendimento do seu pet em tempo real',
+                  'Acompanhe o atendimento do seu pet em tempo real.',
                   style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
                 AppTextField(
-                  controller: _emailController,
                   label: 'E-mail',
-                  prefixIcon: Icons.email_outlined,
+                  controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.mail_outline_rounded,
                   validator: Validators.email,
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  controller: _senhaController,
                   label: 'Senha',
-                  prefixIcon: Icons.lock_outline,
+                  controller: _senhaController,
                   obscureText: true,
-                  validator: (v) => Validators.obrigatorio(v, campo: 'A senha'),
+                  prefixIcon: Icons.lock_outline_rounded,
+                  validator: Validators.senha,
                 ),
                 Align(
                   alignment: Alignment.centerRight,
@@ -97,25 +96,24 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const RecuperarSenhaPage()),
                     ),
-                    child: const Text('Esqueci minha senha', style: TextStyle(color: AppColors.textSecondary)),
+                    child: const Text('Esqueci minha senha'),
                   ),
                 ),
-                const SizedBox(height: 16),
-                PrimaryButton(label: 'Entrar', onPressed: _submit, loading: isLoading),
-                const Spacer(),
+                const SizedBox(height: 12),
+                PrimaryButton(label: 'Entrar', onPressed: _entrar, loading: carregando),
+                const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Não tem uma conta?'),
+                    Text('Não tem uma conta?', style: Theme.of(context).textTheme.bodyMedium),
                     TextButton(
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const CriarContaPage()),
                       ),
-                      child: const Text('Criar conta', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('Criar conta'),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
               ],
             ),
           ),

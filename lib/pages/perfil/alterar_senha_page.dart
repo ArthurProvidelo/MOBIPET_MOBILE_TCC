@@ -26,58 +26,65 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _salvar() async {
     if (!_formKey.currentState!.validate()) return;
-    await context.read<AppState>().alterarSenha(
-          senhaAtual: _senhaAtualController.text,
-          novaSenha: _novaSenhaController.text,
-        );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Senha alterada com sucesso')),
+    final appState = context.read<AppState>();
+    final sucesso = await appState.alterarSenha(
+      senhaAtual: _senhaAtualController.text,
+      novaSenha: _novaSenhaController.text,
     );
-    Navigator.of(context).pop();
+    if (!mounted) return;
+    if (sucesso) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Senha alterada com sucesso!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(appState.erro ?? 'Erro ao alterar senha')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AppState>().isLoading;
+    final salvando = context.watch<AppState>().carregando;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Alterar Senha')),
+      appBar: AppBar(title: const Text('Alterar senha')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppTextField(
-                  controller: _senhaAtualController,
                   label: 'Senha atual',
-                  prefixIcon: Icons.lock_outline,
+                  controller: _senhaAtualController,
                   obscureText: true,
-                  validator: (v) => Validators.obrigatorio(v, campo: 'A senha atual'),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _novaSenhaController,
-                  label: 'Nova senha',
-                  prefixIcon: Icons.lock_outline,
-                  obscureText: true,
+                  prefixIcon: Icons.lock_outline_rounded,
                   validator: Validators.senha,
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  controller: _confirmarSenhaController,
-                  label: 'Confirmar nova senha',
-                  prefixIcon: Icons.lock_outline,
+                  label: 'Nova senha',
+                  controller: _novaSenhaController,
                   obscureText: true,
-                  validator: (v) => v != _novaSenhaController.text ? 'As senhas não coincidem' : null,
+                  prefixIcon: Icons.lock_reset_rounded,
+                  validator: Validators.senha,
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  label: 'Confirmar nova senha',
+                  controller: _confirmarSenhaController,
+                  obscureText: true,
+                  prefixIcon: Icons.lock_reset_rounded,
+                  validator: (v) => Validators.confirmarSenha(v, _novaSenhaController.text),
                 ),
                 const SizedBox(height: 28),
-                PrimaryButton(label: 'Alterar senha', onPressed: _submit, loading: isLoading),
+                PrimaryButton(label: 'Salvar nova senha', onPressed: _salvar, loading: salvando),
               ],
             ),
           ),

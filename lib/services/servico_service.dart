@@ -1,20 +1,11 @@
 import '../models/servico.dart';
-import 'mock_data.dart';
+import 'api_client.dart';
 
 class ServicoService {
-  static const _delay = Duration(milliseconds: 400);
+  final ApiClient _client = ApiClient();
 
-  Future<List<Servico>> listarServicos() async {
-    await Future.delayed(_delay);
-    return List.of(MockData.servicos);
-  }
-
-  Future<Servico?> obterServico(String id) async {
-    await Future.delayed(_delay);
-    try {
-      return MockData.servicos.firstWhere((s) => s.id == id);
-    } catch (_) {
-      return null;
-    }
+  Future<List<Servico>> listar() async {
+    final resposta = await _client.get('/servicos') as List<dynamic>;
+    return resposta.map((e) => Servico.fromJson(e as Map<String, dynamic>)).toList();
   }
 }

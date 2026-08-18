@@ -1,91 +1,134 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/usuario.dart';
+import '../services/api_client.dart';
 import '../services/auth_service.dart';
 
 class AppState extends ChangeNotifier {
-  final AuthService _authService;
+  final AuthService _authService = AuthService();
 
-  AppState({AuthService? authService}) : _authService = authService ?? AuthService();
+  Usuario? _usuario;
+  bool _carregando = false;
+  bool _verificandoSessao = true;
+  String? erro;
 
-  Usuario? _currentUser;
-  bool _isLoading = false;
-  String? _errorMessage;
+  Usuario? get usuario => _usuario;
+  bool get autenticado => _usuario != null;
+  bool get carregando => _carregando;
 
-  Usuario? get currentUser => _currentUser;
-  bool get isLoading => _isLoading;
-  bool get isAuthenticated => _currentUser != null;
-  String? get errorMessage => _errorMessage;
+  /// true enquanto a Splash ainda está checando se há uma sessão salva.
+  bool get verificandoSessao => _verificandoSessao;
 
-  Future<bool> login(String email, String senha) async {
-    _isLoading = true;
-    _errorMessage = null;
+  /// Chamado uma vez, na Splash: tenta restaurar a sessão a partir do token
+  /// salvo localmente. Retorna true se havia uma sessão válida.
+  Future<bool> tentarAutoLogin() async {
+    _usuario = await _authService.usuarioAtual();
+    _verificandoSessao = false;
     notifyListeners();
+    return autenticado;
+  }
+
+  Future<bool> login({required String email, required String senha}) async {
+    _setCarregando(true);
+    erro = null;
     try {
-      _currentUser = await _authService.login(email, senha);
+      _usuario = await _authService.login(email: email, senha: senha);
       return true;
-    } on AuthException catch (e) {
-      _errorMessage = e.message;
+    } on ApiException catch (e) {
+      erro = e.message;
       return false;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setCarregando(false);
     }
   }
 
-  Future<bool> cadastrar({required String nome, required String email, required String senha}) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+  Future<bool> criarConta({
+    required String nome,
+    required String cpf,
+    required String email,
+    required String telefone,
+    required String senha,
+    required String endereco,
+  }) async {
+    _setCarregando(true);
+    erro = null;
     try {
-      _currentUser = await _authService.cadastrar(nome: nome, email: email, senha: senha);
+      _usuario = await _authService.criarConta(
+        nome: nome,
+        cpf: cpf,
+        email: email,
+        telefone: telefone,
+        senha: senha,
+        endereco: endereco,
+      );
       return true;
+    } on ApiException catch (e) {
+      erro = e.message;
+      return false;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setCarregando(false);
     }
   }
 
-  Future<bool> recuperarSenha(String email) async {
-    _isLoading = true;
-    notifyListeners();
+  Future<bool> recuperarSenha({required String email}) async {
+    _setCarregando(true);
+    erro = null;
     try {
-      await _authService.recuperarSenha(email);
+      await _authService.recuperarSenha(email: email);
       return true;
+    } on ApiException catch (e) {
+      erro = e.message;
+      return false;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setCarregando(false);
+    }
+  }
+
+  Future<bool> atualizarPerfil({
+    required String nome,
+    required String email,
+    required String telefone,
+    required String endereco,
+  }) async {
+    _setCarregando(true);
+    erro = null;
+    try {
+      _usuario = await _authService.atualizarPerfil(
+        nome: nome,
+        email: email,
+        telefone: telefone,
+        endereco: endereco,
+      );
+      return true;
+    } on ApiException catch (e) {
+      erro = e.message;
+      return false;
+    } finally {
+      _setCarregando(false);
     }
   }
 
   Future<bool> alterarSenha({required String senhaAtual, required String novaSenha}) async {
-    _isLoading = true;
-    notifyListeners();
+    _setCarregando(true);
+    erro = null;
     try {
       await _authService.alterarSenha(senhaAtual: senhaAtual, novaSenha: novaSenha);
       return true;
+    } on ApiException catch (e) {
+      erro = e.message;
+      return false;
     } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> atualizarPerfil({String? nome, String? email, String? telefone}) async {
-    if (_currentUser == null) return;
-    _isLoading = true;
-    notifyListeners();
-    try {
-      _currentUser = await _authService.atualizarPerfil(
-        _currentUser!.copyWith(nome: nome, email: email, telefone: telefone),
-      );
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setCarregando(false);
     }
   }
 
   Future<void> logout() async {
     await _authService.logout();
-    _currentUser = null;
+    _usuario = null;
+    notifyListeners();
+  }
+
+  void _setCarregando(bool value) {
+    _carregando = value;
     notifyListeners();
   }
 }

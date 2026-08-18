@@ -17,14 +17,16 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   late final TextEditingController _nomeController;
   late final TextEditingController _emailController;
   late final TextEditingController _telefoneController;
+  late final TextEditingController _enderecoController;
 
   @override
   void initState() {
     super.initState();
-    final usuario = context.read<AppState>().currentUser;
+    final usuario = context.read<AppState>().usuario;
     _nomeController = TextEditingController(text: usuario?.nome ?? '');
     _emailController = TextEditingController(text: usuario?.email ?? '');
     _telefoneController = TextEditingController(text: usuario?.telefone ?? '');
+    _enderecoController = TextEditingController(text: usuario?.endereco ?? '');
   }
 
   @override
@@ -32,60 +34,77 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     _nomeController.dispose();
     _emailController.dispose();
     _telefoneController.dispose();
+    _enderecoController.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _salvar() async {
     if (!_formKey.currentState!.validate()) return;
-    await context.read<AppState>().atualizarPerfil(
-          nome: _nomeController.text.trim(),
-          email: _emailController.text.trim(),
-          telefone: _telefoneController.text.trim(),
-        );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Perfil atualizado com sucesso')),
+    final appState = context.read<AppState>();
+    final sucesso = await appState.atualizarPerfil(
+      nome: _nomeController.text.trim(),
+      email: _emailController.text.trim(),
+      telefone: _telefoneController.text.trim(),
+      endereco: _enderecoController.text.trim(),
     );
-    Navigator.of(context).pop();
+    if (!mounted) return;
+    if (sucesso) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Perfil atualizado com sucesso!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(appState.erro ?? 'Erro ao atualizar perfil')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AppState>().isLoading;
+    final salvando = context.watch<AppState>().carregando;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar Perfil')),
+      appBar: AppBar(title: const Text('Editar perfil')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppTextField(
-                  controller: _nomeController,
                   label: 'Nome completo',
-                  prefixIcon: Icons.person_outline,
-                  validator: (v) => Validators.obrigatorio(v, campo: 'O nome'),
+                  controller: _nomeController,
+                  prefixIcon: Icons.person_outline_rounded,
+                  validator: Validators.nome,
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  controller: _emailController,
                   label: 'E-mail',
-                  prefixIcon: Icons.email_outlined,
+                  controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.mail_outline_rounded,
                   validator: Validators.email,
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  controller: _telefoneController,
                   label: 'Telefone',
-                  prefixIcon: Icons.phone_outlined,
+                  controller: _telefoneController,
                   keyboardType: TextInputType.phone,
+                  prefixIcon: Icons.phone_outlined,
+                  validator: Validators.telefone,
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  label: 'Endereço',
+                  controller: _enderecoController,
+                  prefixIcon: Icons.home_outlined,
+                  validator: (v) => Validators.obrigatorio(v, 'Informe o endereço'),
                 ),
                 const SizedBox(height: 28),
-                PrimaryButton(label: 'Salvar', onPressed: _submit, loading: isLoading),
+                PrimaryButton(label: 'Salvar alterações', onPressed: _salvar, loading: salvando),
               ],
             ),
           ),

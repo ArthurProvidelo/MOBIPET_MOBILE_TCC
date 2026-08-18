@@ -1,49 +1,27 @@
 import '../models/atendimento.dart';
-import '../utils/stage_utils.dart';
-import 'mock_data.dart';
+import 'api_client.dart';
 
-/// Simula o comportamento do leitor RFID conectado ao ESP32: cada leitura
-/// avança o atendimento para a próxima etapa fixa da esteira.
 class AtendimentoService {
-  static const _delay = Duration(milliseconds: 350);
+  final ApiClient _client = ApiClient();
 
-  final Map<String, Atendimento> _atendimentos = {
-    MockData.atendimentoAtual.id: MockData.atendimentoAtual,
-  };
-
-  Future<Atendimento?> obterAtendimentoAtual(String donoId) async {
-    await Future.delayed(_delay);
-    try {
-      return _atendimentos.values.firstWhere((a) => !a.isFinalizado);
-    } catch (_) {
-      return null;
-    }
+  /// Atendimento em andamento mais recente entre todos os pets do cliente.
+  Future<Atendimento?> atual() async {
+    final resposta = await _client.get('/atendimentos/atual') as Map<String, dynamic>;
+    final dados = resposta['atendimento'];
+    return dados == null ? null : Atendimento.fromJson(dados as Map<String, dynamic>);
   }
 
-  Future<Atendimento?> obterAtendimento(String id) async {
-    await Future.delayed(_delay);
-    return _atendimentos[id];
+  /// Atendimento em andamento de um pet específico (ou null).
+  Future<Atendimento?> atualDoPet(String petId) async {
+    final resposta = await _client.get('/pets/$petId/atendimento-atual') as Map<String, dynamic>;
+    final dados = resposta['atendimento'];
+    return dados == null ? null : Atendimento.fromJson(dados as Map<String, dynamic>);
   }
 
+  /// Simula a leitura do cartão RFID no leitor conectado ao ESP32,
+  /// avançando o pet para a próxima etapa da esteira de atendimento.
   Future<Atendimento> avancarEtapa(String atendimentoId) async {
-    await Future.delayed(_delay);
-    final atual = _atendimentos[atendimentoId];
-    if (atual == null) {
-      throw StateError('Atendimento não encontrado');
-    }
-    final proxima = StageUtils.proximaEtapa(atual.etapaAtual);
-    if (proxima == null) return atual;
-
-    final novoHistorico = List.of(atual.historico)
-      ..add(EtapaTimestamp(etapa: proxima, concluidaEm: DateTime.now()));
-
-    final atualizado = atual.copyWith(
-      etapaAtual: proxima,
-      historico: novoHistorico,
-      finalizadoEm: proxima == EtapaAtendimento.finalizado ? DateTime.now() : null,
-    );
-
-    _atendimentos[atendimentoId] = atualizado;
-    return atualizado;
+    final resposta = await _client.post('/atendimentos/$atendimentoId/avancar');
+    return Atendimento.fromJson(resposta as Map<String, dynamic>);
   }
 }

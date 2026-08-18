@@ -13,74 +13,116 @@ class PerfilPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final usuario = context.watch<AppState>().currentUser;
+    final usuario = context.watch<AppState>().usuario;
+
+    if (usuario == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Perfil')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: usuario?.avatarUrl != null ? NetworkImage(usuario!.avatarUrl!) : null,
-                  child: usuario?.avatarUrl == null ? const Icon(Icons.person, size: 36) : null,
-                ),
-                const SizedBox(height: 12),
-                Text(usuario?.nome ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                Text(usuario?.email ?? '', style: const TextStyle(color: AppColors.textSecondary)),
-              ],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          children: [
+            Center(
+              child: Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 44,
+                    backgroundColor: AppColors.background,
+                    child: Icon(Icons.person_outline_rounded, size: 40, color: AppColors.primary),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(usuario.nome, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 2),
+                  Text(usuario.email, style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
-          CustomCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.person_outline, color: AppColors.primary),
-                  title: const Text('Editar dados pessoais'),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EditarPerfilPage())),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  leading: const Icon(Icons.lock_outline, color: AppColors.primary),
-                  title: const Text('Alterar minha senha'),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AlterarSenhaPage())),
-                ),
-              ],
+            const SizedBox(height: 28),
+            CustomCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _ProfileTile(
+                    icon: Icons.person_outline_rounded,
+                    label: 'Editar perfil',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const EditarPerfilPage()),
+                    ),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _ProfileTile(
+                    icon: Icons.lock_outline_rounded,
+                    label: 'Alterar senha',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AlterarSenhaPage()),
+                    ),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _ProfileTile(icon: Icons.phone_outlined, label: 'Telefone', trailing: usuario.telefone),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          CustomCard(
-            padding: EdgeInsets.zero,
-            child: ListTile(
-              leading: const Icon(Icons.logout, color: AppColors.danger),
-              title: const Text('Sair do Aplicativo', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600)),
-              onTap: () async {
-                final confirmar = await showConfirmDialog(
-                  context,
-                  title: 'Sair da conta?',
-                  message: 'Você precisará entrar novamente para acompanhar seus pets.',
-                  confirmLabel: 'Sair',
-                  danger: true,
-                );
-                if (!context.mounted || !confirmar) return;
-                await context.read<AppState>().logout();
-                if (!context.mounted) return;
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                  (route) => false,
-                );
-              },
+            const SizedBox(height: 20),
+            CustomCard(
+              padding: EdgeInsets.zero,
+              child: _ProfileTile(
+                icon: Icons.logout_rounded,
+                label: 'Sair da conta',
+                iconColor: AppColors.danger,
+                labelColor: AppColors.danger,
+                onTap: () async {
+                  final confirmar = await ConfirmDialog.show(
+                    context,
+                    title: 'Sair da conta',
+                    message: 'Tem certeza que deseja sair?',
+                    confirmLabel: 'Sair',
+                    destructive: true,
+                  );
+                  if (!context.mounted || !confirmar) return;
+                  context.read<AppState>().logout();
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _ProfileTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? trailing;
+  final VoidCallback? onTap;
+  final Color? iconColor;
+  final Color? labelColor;
+
+  const _ProfileTile({
+    required this.icon,
+    required this.label,
+    this.trailing,
+    this.onTap,
+    this.iconColor,
+    this.labelColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: iconColor ?? AppColors.primary),
+      title: Text(label, style: TextStyle(color: labelColor ?? AppColors.textPrimary, fontWeight: FontWeight.w500)),
+      trailing: trailing != null
+          ? Text(trailing!, style: const TextStyle(color: AppColors.textSecondary))
+          : (onTap != null ? const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary) : null),
     );
   }
 }

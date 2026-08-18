@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import 'auth/login_page.dart';
+import 'main_navigation_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -10,35 +13,30 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
-
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _scale = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+    _opacity = CurvedAnimation(parent: _controller, curve: const Interval(0, 0.6, curve: Curves.easeIn));
     _controller.forward();
+    _iniciar();
+  }
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const LoginPage(),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-        );
-      }
-    });
+  Future<void> _iniciar() async {
+    final autoLoginFuture = context.read<AppState>().tentarAutoLogin();
+    final animacaoFuture = Future.delayed(const Duration(milliseconds: 1900));
+    final resultados = await Future.wait([autoLoginFuture, animacaoFuture]);
+    if (!mounted) return;
+
+    final autenticado = resultados[0] as bool;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => autenticado ? const MainNavigationPage() : const LoginPage()),
+    );
   }
 
   @override
@@ -53,26 +51,33 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
       backgroundColor: AppColors.primary,
       body: Center(
         child: FadeTransition(
-          opacity: _fadeAnimation,
+          opacity: _opacity,
           child: ScaleTransition(
-            scale: _scaleAnimation,
+            scale: _scale,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                  child: const Icon(Icons.pets, size: 64, color: AppColors.primary),
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 24, offset: const Offset(0, 10)),
+                    ],
+                  ),
+                  child: const Icon(Icons.pets_rounded, size: 52, color: AppColors.primary),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 const Text(
-                  'Mobipet',
-                  style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                  'MOBIPET',
+                  style: TextStyle(color: AppColors.white, fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: 2),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Monitoramento em tempo real do seu pet',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                  'Monitoramento',
+                  style: TextStyle(color: AppColors.white.withValues(alpha: 0.85), fontSize: 15, letterSpacing: 1),
                 ),
               ],
             ),

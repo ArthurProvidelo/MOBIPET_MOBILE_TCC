@@ -5,105 +5,54 @@ import 'custom_card.dart';
 
 class PetCard extends StatelessWidget {
   final Pet pet;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
   final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-  final bool compact;
+  final VoidCallback? onAcompanhar;
 
   const PetCard({
     super.key,
     required this.pet,
-    this.onTap,
+    required this.onTap,
     this.onEdit,
-    this.onDelete,
-    this.compact = false,
+    this.onAcompanhar,
   });
 
   @override
   Widget build(BuildContext context) {
-    return compact ? _buildCompact() : _buildFull();
-  }
-
-  Widget _buildCompact() {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 100,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Hero(
-              tag: 'pet-image-home-${pet.id}',
-              child: CircleAvatar(radius: 24, backgroundImage: NetworkImage(pet.imageUrl)),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              pet.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFull() {
     return CustomCard(
       onTap: onTap,
+      padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          Hero(
-            tag: 'pet-image-${pet.id}',
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(pet.imageUrl, width: 80, height: 80, fit: BoxFit.cover),
-            ),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: AppColors.background),
+            child: const Icon(Icons.pets_rounded, color: AppColors.primary, size: 32),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(pet.name, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
-                Text(pet.breed, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                const SizedBox(height: 4),
-                Text(pet.age, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500, fontSize: 12)),
+                Text('${pet.breed} · ${pet.especie}', style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
-          if (onEdit != null || onDelete != null)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-              onSelected: (value) {
-                if (value == 'edit') onEdit?.call();
-                if (value == 'delete') onDelete?.call();
-              },
-              itemBuilder: (context) => [
-                if (onEdit != null)
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(children: [Icon(Icons.edit_outlined, size: 20), SizedBox(width: 8), Text('Editar')]),
-                  ),
-                if (onDelete != null)
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(children: [
-                      Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
-                      SizedBox(width: 8),
-                      Text('Excluir', style: TextStyle(color: AppColors.danger)),
-                    ]),
-                  ),
-              ],
+          if (onEdit != null)
+            IconButton(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary),
             ),
+          if (onAcompanhar != null)
+            IconButton(
+              onPressed: onAcompanhar,
+              icon: const Icon(Icons.arrow_forward_rounded, color: AppColors.primary),
+            )
+          else if (onEdit == null)
+            const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
         ],
       ),
     );

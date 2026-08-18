@@ -1,44 +1,32 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/atendimento.dart';
 import '../services/atendimento_service.dart';
-import '../services/mock_data.dart';
 
-/// Estado compartilhado do atendimento em andamento. É a mesma instância
-/// observada pela Home e pela tela Detalhes do Serviço, então o botão
-/// "Simular leitura RFID" em qualquer uma delas mantém as duas em sincronia.
 class AtendimentoProvider extends ChangeNotifier {
-  final AtendimentoService _atendimentoService;
-
-  AtendimentoProvider({AtendimentoService? atendimentoService})
-      : _atendimentoService = atendimentoService ?? AtendimentoService();
+  final AtendimentoService _service = AtendimentoService();
 
   Atendimento? _atual;
-  bool _isLoading = false;
-  bool _isAvancando = false;
+  bool _carregando = false;
+  bool _avancando = false;
 
   Atendimento? get atual => _atual;
-  bool get isLoading => _isLoading;
-  bool get isAvancando => _isAvancando;
+  bool get carregando => _carregando;
+  bool get avancando => _avancando;
 
   Future<void> carregar() async {
-    _isLoading = true;
+    _carregando = true;
     notifyListeners();
-    _atual = await _atendimentoService.obterAtendimentoAtual(MockData.donoId);
-    _isLoading = false;
+    _atual = await _service.atual();
+    _carregando = false;
     notifyListeners();
-  }
-
-  Future<Atendimento?> obter(String id) async {
-    return _atendimentoService.obterAtendimento(id);
   }
 
   Future<void> simularLeituraRfid() async {
-    if (_atual == null || _atual!.isFinalizado || _isAvancando) return;
-    _isAvancando = true;
+    if (_atual == null || _atual!.isFinalizado || _avancando) return;
+    _avancando = true;
     notifyListeners();
-    final atualizado = await _atendimentoService.avancarEtapa(_atual!.id);
-    _atual = atualizado;
-    _isAvancando = false;
+    _atual = await _service.avancarEtapa(_atual!.id);
+    _avancando = false;
     notifyListeners();
   }
 }

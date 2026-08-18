@@ -1,109 +1,125 @@
 import 'package:flutter/material.dart';
-import '../../models/pet.dart';
+import 'package:provider/provider.dart';
+import '../../state/pets_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/confirm_dialog.dart';
+import '../../widgets/custom_badge.dart';
 import '../../widgets/custom_card.dart';
-import '../agendamentos/novo_agendamento_page.dart';
 import 'pet_form_page.dart';
 
 class PetDetailsPage extends StatelessWidget {
-  final Pet pet;
+  final String petId;
 
-  const PetDetailsPage({super.key, required this.pet});
+  const PetDetailsPage({super.key, required this.petId});
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<PetsProvider>();
+    final pet = provider.porId(petId);
+
+    if (pet == null) {
+      return const Scaffold(body: Center(child: Text('Pet não encontrado')));
+    }
+
+    final nascimento = DateTime.tryParse(pet.birthDate);
+    final nascimentoFormatado =
+        nascimento == null ? pet.birthDate : '${nascimento.day.toString().padLeft(2, '0')}/${nascimento.month.toString().padLeft(2, '0')}/${nascimento.year}';
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 280,
-            pinned: true,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => PetFormPage(mode: PetFormMode.edit, pet: pet)),
-                ),
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(pet.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Hero(
-                    tag: 'pet-image-${pet.id}',
-                    child: Image.network(pet.imageUrl, fit: BoxFit.cover),
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black54],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+      appBar: AppBar(
+        title: Text(pet.name),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => PetFormPage(petId: pet.id)),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(pet.breed, style: const TextStyle(color: AppColors.textSecondary, fontSize: 15)),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(child: _buildInfoTile('Sexo', pet.gender)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildInfoTile('Peso', '${pet.weight} kg')),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildInfoTile('Nascimento', pet.birthDate)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Text('Observações & Cuidados Especiais', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16)),
-                  const SizedBox(height: 12),
-                  CustomCard(
-                    child: Text(
-                      pet.notes.isNotEmpty ? pet.notes : 'Nenhuma observação registrada.',
-                      style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => NovoAgendamentoPage(petIdPreSelecionado: pet.id)),
-                    ),
-                    icon: const Icon(Icons.calendar_month),
-                    label: const Text('Agendar Serviço'),
-                  ),
-                ],
-              ),
-            ),
+            icon: const Icon(Icons.edit_outlined),
           ),
         ],
       ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Center(
+              child: Container(
+                width: 96,
+                height: 96,
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
+                child: const Icon(Icons.pets_rounded, size: 44, color: AppColors.primary),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(child: Text(pet.name, style: Theme.of(context).textTheme.headlineSmall)),
+            const SizedBox(height: 8),
+            Center(child: CustomBadge(label: pet.status, color: AppColors.accent)),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(child: _InfoTile(label: 'Espécie', value: pet.especie, icon: Icons.pets_outlined)),
+                const SizedBox(width: 12),
+                Expanded(child: _InfoTile(label: 'Porte', value: pet.porte, icon: Icons.straighten_outlined)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _InfoTile(label: 'Raça', value: pet.breed, icon: Icons.category_outlined)),
+                const SizedBox(width: 12),
+                Expanded(child: _InfoTile(label: 'Nascimento', value: nascimentoFormatado, icon: Icons.calendar_today_outlined)),
+              ],
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final confirmar = await ConfirmDialog.show(
+                    context,
+                    title: 'Remover pet',
+                    message: 'Tem certeza que deseja remover ${pet.name}? Esta ação não pode ser desfeita.',
+                    confirmLabel: 'Remover',
+                    destructive: true,
+                  );
+                  if (!context.mounted || !confirmar) return;
+                  await context.read<PetsProvider>().remover(pet.id);
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${pet.name} foi removido')),
+                  );
+                },
+                style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger, side: const BorderSide(color: AppColors.danger)),
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text('Remover pet'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildInfoTile(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
+class _InfoTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _InfoTile({required this.label, required this.value, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomCard(
+      padding: const EdgeInsets.all(14),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Icon(icon, color: AppColors.primary, size: 20),
+          const SizedBox(height: 10),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 2),
+          Text(value, style: Theme.of(context).textTheme.titleMedium),
         ],
       ),
     );

@@ -13,9 +13,19 @@ class SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimary)),
-        if (actionLabel != null && onAction != null)
-          TextButton(onPressed: onAction, child: Text(actionLabel!)),
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        if (actionLabel != null)
+          TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 32)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(actionLabel!, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.primary),
+              ],
+            ),
+          ),
       ],
     );
   }

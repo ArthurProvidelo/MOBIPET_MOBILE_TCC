@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Paleta oficial da identidade visual MobiPet.
 abstract class AppColors {
   static const Color primary = Color(0xFF2D5D96);
-  static const Color secondary = Color(0xFF58B8E8);
+  static const Color primaryLight = Color(0xFF58B8E8);
   static const Color accent = Color(0xFFF59A23);
 
   static const Color white = Color(0xFFFFFFFF);
@@ -14,8 +15,8 @@ abstract class AppColors {
 
   static const Color success = Color(0xFF22C55E);
   static const Color danger = Color(0xFFEF4444);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color info = Color(0xFF2D5D96);
+  static const Color warning = Color(0xFFF59A23);
 
-  static const Color border = Color(0xFFE5E9F0);
+  static const Color border = Color(0xFFE6EAF2);
+  static const Color shadow = Color(0x1A2D5D96);
 }

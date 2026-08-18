@@ -6,6 +6,7 @@ import '../../widgets/confirm_dialog.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/pet_card.dart';
+import 'pet_acompanhamento_page.dart';
 import 'pet_details_page.dart';
 import 'pet_form_page.dart';
 
@@ -14,64 +15,83 @@ class PetsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final petsProvider = context.watch<PetsProvider>();
+    final provider = context.watch<PetsProvider>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Meus Pets')),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'fab-pets',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PetFormPage(mode: PetFormMode.create)),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Novo Pet'),
-      ),
-      body: petsProvider.isLoading
-          ? const LoadingView()
-          : petsProvider.pets.isEmpty
-              ? Center(
-                  child: EmptyState(
-                    icon: Icons.pets_outlined,
-                    title: 'Nenhum pet cadastrado ainda',
-                    subtitle: 'Cadastre seu primeiro pet para começar a acompanhar os atendimentos.',
+      body: SafeArea(
+        child: provider.carregando
+            ? const LoadingView()
+            : provider.pets.isEmpty
+                ? EmptyState(
+                    icon: Icons.pets_rounded,
+                    title: 'Nenhum pet cadastrado',
+                    message: 'Cadastre seu primeiro pet para acompanhar os atendimentos.',
                     actionLabel: 'Cadastrar pet',
                     onAction: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const PetFormPage(mode: PetFormMode.create)),
+                      MaterialPageRoute(builder: (_) => const PetFormPage()),
                     ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: petsProvider.pets.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final pet = petsProvider.pets[index];
-                    return PetCard(
-                      pet: pet,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => PetDetailsPage(pet: pet)),
-                      ),
-                      onEdit: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => PetFormPage(mode: PetFormMode.edit, pet: pet)),
-                      ),
-                      onDelete: () async {
-                        final confirmar = await showConfirmDialog(
-                          context,
-                          title: 'Excluir ${pet.name}?',
-                          message: 'Essa ação não pode ser desfeita.',
-                          confirmLabel: 'Excluir',
-                          danger: true,
-                        );
-                        if (!context.mounted || !confirmar) return;
-                        await context.read<PetsProvider>().remover(pet.id);
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('${pet.name} foi removido'), backgroundColor: AppColors.textPrimary),
+                  )
+                : RefreshIndicator(
+                    onRefresh: provider.carregar,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                      itemCount: provider.pets.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
+                      itemBuilder: (context, index) {
+                        final pet = provider.pets[index];
+                        return Dismissible(
+                          key: ValueKey(pet.id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            decoration: BoxDecoration(
+                              color: AppColors.danger,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(Icons.delete_outline_rounded, color: AppColors.white),
+                          ),
+                          confirmDismiss: (_) => ConfirmDialog.show(
+                            context,
+                            title: 'Remover pet',
+                            message: 'Tem certeza que deseja remover ${pet.name}? Esta ação não pode ser desfeita.',
+                            confirmLabel: 'Remover',
+                            destructive: true,
+                          ),
+                          onDismissed: (_) async {
+                            await context.read<PetsProvider>().remover(pet.id);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('${pet.name} foi removido')),
+                            );
+                          },
+                          child: PetCard(
+                            pet: pet,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => PetDetailsPage(petId: pet.id)),
+                            ),
+                            onEdit: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => PetFormPage(petId: pet.id)),
+                            ),
+                            onAcompanhar: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => PetAcompanhamentoPage(petId: pet.id)),
+                            ),
+                          ),
                         );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const PetFormPage()),
+        ),
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.white,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Novo pet'),
+      ),
     );
   }
 }

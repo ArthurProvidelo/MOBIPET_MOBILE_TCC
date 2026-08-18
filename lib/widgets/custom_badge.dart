@@ -1,45 +1,29 @@
 import 'package:flutter/material.dart';
-import '../models/agendamento.dart';
-import '../theme/app_colors.dart';
 
 class CustomBadge extends StatelessWidget {
-  final StatusAgendamento status;
+  final String label;
+  final Color color;
+  final IconData? icon;
 
-  const CustomBadge({super.key, required this.status});
+  const CustomBadge({super.key, required this.label, required this.color, this.icon});
 
   @override
   Widget build(BuildContext context) {
-    Color color;
-    String label;
-
-    switch (status) {
-      case StatusAgendamento.agendado:
-        color = AppColors.info;
-        label = 'Agendado';
-        break;
-      case StatusAgendamento.concluido:
-        color = AppColors.success;
-        label = 'Concluído';
-        break;
-      case StatusAgendamento.cancelado:
-        color = AppColors.danger;
-        label = 'Cancelado';
-        break;
-    }
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[Icon(icon, size: 14, color: color), const SizedBox(width: 6)],
+          Text(
+            label,
+            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }
