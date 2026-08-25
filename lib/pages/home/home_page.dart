@@ -11,6 +11,7 @@ import '../../utils/date_formatters.dart';
 import '../../widgets/custom_card.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/section_header.dart';
+import '../../utils/stage_utils.dart';
 import '../../widgets/stage_badge.dart';
 import '../../widgets/stage_timeline.dart';
 import '../agendamentos/agendamentos_page.dart';
@@ -128,8 +129,9 @@ class _AtendimentoAtualCard extends StatelessWidget {
       return const CustomCard(child: Padding(padding: EdgeInsets.all(12), child: LoadingView()));
     }
 
-    final atendimento = provider.atual;
-    if (atendimento == null) {
+    final agendamento = provider.atual;
+    final progresso = provider.progresso;
+    if (agendamento == null || progresso == null) {
       return CustomCard(
         child: Row(
           children: [
@@ -146,8 +148,8 @@ class _AtendimentoAtualCard extends StatelessWidget {
       );
     }
 
-    final pet = petsProvider.porId(atendimento.petId);
-    final servico = servicosProvider.porId(atendimento.servicoId);
+    final pet = petsProvider.porId(agendamento.petId);
+    final servico = servicosProvider.porId(agendamento.servicoId);
 
     return CustomCard(
       child: Column(
@@ -182,21 +184,24 @@ class _AtendimentoAtualCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           StageProgressBar(
-            progresso: atendimento.progresso,
-            etapasConcluidas: atendimento.etapasConcluidas,
-            totalEtapas: atendimento.totalEtapas,
+            progresso: progresso.progresso,
+            etapasConcluidas: progresso.etapasConcluidas,
+            totalEtapas: progresso.totalEtapas,
           ),
           const SizedBox(height: 18),
-          Align(alignment: Alignment.centerLeft, child: StageBadge(etapa: atendimento.etapaAtual)),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: StageBadge(status: agendamento.status, etapa: progresso.etapaAtual),
+          ),
           const SizedBox(height: 18),
           const Divider(),
           const SizedBox(height: 14),
-          StageTimeline(atendimento: atendimento, compacto: true),
+          StageTimeline(agendamento: agendamento, progresso: progresso),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: provider.avancando || atendimento.isFinalizado
+              onPressed: provider.avancando || agendamento.isFinalizado
                   ? null
                   : () => provider.simularLeituraRfid(),
               icon: provider.avancando
@@ -206,7 +211,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                     )
                   : const Icon(Icons.nfc_rounded, size: 18),
-              label: Text(atendimento.isFinalizado ? 'Atendimento concluído' : 'Simular leitura RFID'),
+              label: Text(StageUtils.rotuloAcao(agendamento, progresso)),
               style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
             ),
           ),

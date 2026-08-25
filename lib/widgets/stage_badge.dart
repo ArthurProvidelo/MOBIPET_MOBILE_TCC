@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
-import '../models/atendimento.dart';
+import '../models/agendamento.dart';
 import '../theme/app_colors.dart';
+import '../utils/etapas_servico.dart';
 import '../utils/stage_utils.dart';
 
 class StageBadge extends StatelessWidget {
-  final EtapaAtendimento etapa;
+  final StatusAgendamento status;
+  final EtapaServico etapa;
 
-  const StageBadge({super.key, required this.etapa});
+  const StageBadge({super.key, required this.status, required this.etapa});
 
   @override
   Widget build(BuildContext context) {
-    final color = StageUtils.color(etapa);
+    final color = StageUtils.color(status);
+    final cancelado = status == StatusAgendamento.cancelado;
+    final label = cancelado ? 'Cancelado' : etapa.label;
+    final icon = cancelado ? Icons.cancel_rounded : etapa.icon;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -21,10 +27,10 @@ class StageBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(StageUtils.icon(etapa), size: 16, color: color),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(
-            StageUtils.label(etapa),
+            label,
             style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13),
           ),
         ],

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/atendimento.dart';
-import '../../services/atendimento_service.dart';
+import '../../models/agendamento.dart';
+import '../../services/agendamento_service.dart';
 import '../../state/pets_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/etapas_servico.dart';
+import '../../utils/stage_utils.dart';
 import '../../widgets/custom_card.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/stage_badge.dart';
@@ -21,8 +23,9 @@ class PetAcompanhamentoPage extends StatefulWidget {
 }
 
 class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
-  final _service = AtendimentoService();
-  Atendimento? _atendimento;
+  final _service = AgendamentoService();
+  Agendamento? _agendamento;
+  int _subEtapaLocal = 0;
   bool _carregando = true;
   bool _avancando = false;
 
@@ -34,21 +37,38 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
 
   Future<void> _carregar() async {
     setState(() => _carregando = true);
-    final atendimento = await _service.atualDoPet(widget.petId);
+    final agendamento = await _service.atualDoPet(widget.petId);
     if (!mounted) return;
     setState(() {
-      _atendimento = atendimento;
+      if (agendamento?.id != _agendamento?.id) _subEtapaLocal = 0;
+      _agendamento = agendamento;
       _carregando = false;
     });
   }
 
   Future<void> _avancar() async {
-    if (_atendimento == null || _atendimento!.isFinalizado || _avancando) return;
+    final agendamento = _agendamento;
+    if (agendamento == null || agendamento.isFinalizado || _avancando) return;
+    final progresso = ProgressoEtapas.de(agendamento, subEtapaLocal: _subEtapaLocal);
     setState(() => _avancando = true);
-    final atualizado = await _service.avancarEtapa(_atendimento!.id);
+
+    Agendamento? atualizado;
+    int subEtapaLocal = _subEtapaLocal;
+    if (agendamento.status == StatusAgendamento.agendado) {
+      atualizado = await _service.iniciar(agendamento.id);
+      subEtapaLocal = 1;
+    } else if (progresso.proximaAcaoFinaliza) {
+      atualizado = await _service.avancar(agendamento.id);
+      subEtapaLocal = 0;
+    } else {
+      atualizado = agendamento;
+      subEtapaLocal = (_subEtapaLocal + 1).clamp(1, progresso.etapas.length - 2);
+    }
+
     if (!mounted) return;
     setState(() {
-      _atendimento = atualizado;
+      _agendamento = atualizado;
+      _subEtapaLocal = subEtapaLocal;
       _avancando = false;
     });
   }
@@ -56,6 +76,10 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
   @override
   Widget build(BuildContext context) {
     final pet = context.watch<PetsProvider>().porId(widget.petId);
+    final agendamento = _agendamento;
+    final progresso = agendamento == null
+        ? null
+        : ProgressoEtapas.de(agendamento, subEtapaLocal: _subEtapaLocal);
 
     return Scaffold(
       appBar: AppBar(title: Text(pet?.name ?? 'Acompanhamento')),
@@ -69,7 +93,7 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
                   children: [
                     if (_carregando)
                       const Padding(padding: EdgeInsets.all(24), child: LoadingView())
-                    else if (_atendimento == null)
+                    else if (_agendamento == null)
                       CustomCard(
                         child: Row(
                           children: [
@@ -105,21 +129,24 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
                             ),
                             const SizedBox(height: 18),
                             StageProgressBar(
-                              progresso: _atendimento!.progresso,
-                              etapasConcluidas: _atendimento!.etapasConcluidas,
-                              totalEtapas: _atendimento!.totalEtapas,
+                              progresso: progresso!.progresso,
+                              etapasConcluidas: progresso.etapasConcluidas,
+                              totalEtapas: progresso.totalEtapas,
                             ),
                             const SizedBox(height: 18),
-                            Align(alignment: Alignment.centerLeft, child: StageBadge(etapa: _atendimento!.etapaAtual)),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: StageBadge(status: agendamento!.status, etapa: progresso.etapaAtual),
+                            ),
                             const SizedBox(height: 18),
                             const Divider(),
                             const SizedBox(height: 14),
-                            StageTimeline(atendimento: _atendimento!, compacto: true),
+                            StageTimeline(agendamento: agendamento, progresso: progresso),
                             const SizedBox(height: 8),
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(
-                                onPressed: _avancando || _atendimento!.isFinalizado ? null : _avancar,
+                                onPressed: _avancando || agendamento.isFinalizado ? null : _avancar,
                                 icon: _avancando
                                     ? const SizedBox(
                                         width: 16,
@@ -127,7 +154,7 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
                                         child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                                       )
                                     : const Icon(Icons.nfc_rounded, size: 18),
-                                label: Text(_atendimento!.isFinalizado ? 'Atendimento concluído' : 'Simular leitura RFID'),
+                                label: Text(StageUtils.rotuloAcao(agendamento, progresso)),
                                 style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                               ),
                             ),

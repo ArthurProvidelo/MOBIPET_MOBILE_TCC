@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
-import '../models/atendimento.dart';
+import '../models/agendamento.dart';
 import '../theme/app_colors.dart';
-import '../utils/date_formatters.dart';
-import '../utils/stage_utils.dart';
+import '../utils/etapas_servico.dart';
 
 class StageTimeline extends StatelessWidget {
-  final Atendimento atendimento;
-  final bool compacto;
+  final Agendamento agendamento;
+  final ProgressoEtapas progresso;
 
-  const StageTimeline({super.key, required this.atendimento, this.compacto = false});
+  const StageTimeline({super.key, required this.agendamento, required this.progresso});
 
   @override
   Widget build(BuildContext context) {
-    final etapas = EtapaAtendimento.values;
-    final etapasVisiveis = compacto ? etapas.sublist(0, 4) : etapas;
+    final etapas = progresso.etapas;
+    final etapaIndex = progresso.indice;
 
     return Column(
-      children: List.generate(etapasVisiveis.length, (index) {
-        final etapa = etapasVisiveis[index];
-        final isLast = index == etapasVisiveis.length - 1;
-        final concluida = index <= atendimento.etapaIndex;
-        final atual = etapa == atendimento.etapaAtual && !atendimento.isFinalizado;
-        final timestamp = atendimento.timestampDe(etapa);
+      children: List.generate(etapas.length, (index) {
+        final etapa = etapas[index];
+        final isLast = index == etapas.length - 1;
+        final concluida = index <= etapaIndex;
+        final atual = index == etapaIndex && !agendamento.isFinalizado;
         final circleColor = concluida ? AppColors.primary : AppColors.border;
 
         return IntrinsicHeight(
@@ -43,7 +41,7 @@ class StageTimeline extends StatelessWidget {
                           : null,
                     ),
                     child: Icon(
-                      concluida ? (atual ? StageUtils.icon(etapa) : Icons.check_rounded) : StageUtils.icon(etapa),
+                      concluida ? (atual ? etapa.icon : Icons.check_rounded) : etapa.icon,
                       size: atual ? 18 : 14,
                       color: concluida ? AppColors.white : AppColors.textSecondary,
                     ),
@@ -53,7 +51,7 @@ class StageTimeline extends StatelessWidget {
                       child: Container(
                         width: 2,
                         margin: const EdgeInsets.symmetric(vertical: 2),
-                        color: index < atendimento.etapaIndex ? AppColors.primary : AppColors.border,
+                        color: index < etapaIndex ? AppColors.primary : AppColors.border,
                       ),
                     ),
                 ],
@@ -66,22 +64,14 @@ class StageTimeline extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        StageUtils.label(etapa),
+                        etapa.label,
                         style: TextStyle(
                           fontWeight: concluida ? FontWeight.w600 : FontWeight.w500,
                           color: concluida ? AppColors.textPrimary : AppColors.textSecondary,
                           fontSize: 15,
                         ),
                       ),
-                      if (timestamp != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            DateFormatters.hora(timestamp),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        )
-                      else if (atual)
+                      if (atual)
                         const Padding(
                           padding: EdgeInsets.only(top: 2),
                           child: Text('Em andamento', style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600)),

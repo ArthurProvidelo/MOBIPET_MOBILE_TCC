@@ -33,6 +33,34 @@ class AgendamentoService {
     return _client.patch('/agendamentos/$id/cancelar');
   }
 
+  /// Agendamento "atual" do cliente: o que já está em atendimento (Banho)
+  /// ou, na falta desse, o próximo pendente.
+  Future<Agendamento?> atual() async {
+    final resposta = await _client.get('/agendamentos/atual') as Map<String, dynamic>;
+    final dados = resposta['agendamento'];
+    return dados == null ? null : Agendamento.fromJson(dados as Map<String, dynamic>);
+  }
+
+  /// Atendimento em andamento (status Banho) de um pet específico, ou null.
+  Future<Agendamento?> atualDoPet(String petId) async {
+    final resposta = await _client.get('/pets/$petId/atendimento-atual') as Map<String, dynamic>;
+    final dados = resposta['agendamento'];
+    return dados == null ? null : Agendamento.fromJson(dados as Map<String, dynamic>);
+  }
+
+  /// Check-in: inicia o atendimento de um agendamento pendente (Pendente -> Banho).
+  Future<Agendamento> iniciar(String id) async {
+    final resposta = await _client.post('/agendamentos/$id/iniciar');
+    return Agendamento.fromJson(resposta as Map<String, dynamic>);
+  }
+
+  /// Simula a leitura do cartão RFID, avançando para a próxima etapa
+  /// (Banho -> Concluído).
+  Future<Agendamento> avancar(String id) async {
+    final resposta = await _client.post('/agendamentos/$id/avancar');
+    return Agendamento.fromJson(resposta as Map<String, dynamic>);
+  }
+
   String _formatarData(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 

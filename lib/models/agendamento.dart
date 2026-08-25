@@ -49,8 +49,13 @@ class Agendamento {
   static StatusAgendamento _statusFromString(String? valor) {
     final normalizado = (valor ?? '').toLowerCase();
     if (normalizado.contains('cancel')) return StatusAgendamento.cancelado;
-    if (normalizado.contains('andamento')) return StatusAgendamento.emAndamento;
+    if (normalizado.contains('andamento') || normalizado.contains('banho')) return StatusAgendamento.emAndamento;
     if (normalizado.contains('conclu') || normalizado.contains('finaliz')) return StatusAgendamento.concluido;
     return StatusAgendamento.agendado;
   }
+
+  /// Status real no backend: Pendente -> Banho -> Concluído (espelha
+  /// `AgendamentoController::ETAPAS` no Laravel). A esteira detalhada por
+  /// tipo de serviço, exibida no app, é resolvida em `ProgressoEtapas`.
+  bool get isFinalizado => status == StatusAgendamento.concluido || status == StatusAgendamento.cancelado;
 }
