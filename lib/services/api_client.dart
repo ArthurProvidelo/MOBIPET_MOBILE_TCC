@@ -26,7 +26,7 @@ class ApiException implements Exception {
 /// mesma rede Wi-Fi. Se reiniciar o servidor em outro host/porta, atualize
 /// a constante abaixo.
 class ApiConfig {
-  static const String _hostLaravel = '10.141.130.86:8000';
+  static const String _hostLaravel = '10.141.130.36:8000';
 
   static String get baseUrl => 'http://$_hostLaravel/api';
 }

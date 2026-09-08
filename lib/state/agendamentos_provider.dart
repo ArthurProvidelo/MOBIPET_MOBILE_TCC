@@ -6,19 +6,24 @@ class AgendamentosProvider extends ChangeNotifier {
   final AgendamentoService _service = AgendamentoService();
 
   List<Agendamento> _agendamentos = [];
+  List<Agendamento> _proximos = [];
   bool _carregando = false;
 
   List<Agendamento> get agendamentos => _agendamentos;
   bool get carregando => _carregando;
 
-  List<Agendamento> get proximos => _agendamentos
-      .where((a) => a.status == StatusAgendamento.agendado && a.dateTime.isAfter(DateTime.now()))
-      .toList();
+  /// Próximos agendamentos vindos de `GET /agendamentos/proximos` (Laravel).
+  List<Agendamento> get proximos => _proximos;
 
   Future<void> carregar() async {
     _carregando = true;
     notifyListeners();
-    _agendamentos = await _service.listar();
+    final resultados = await Future.wait([
+      _service.listar(),
+      _service.proximos(),
+    ]);
+    _agendamentos = resultados[0];
+    _proximos = resultados[1];
     _carregando = false;
     notifyListeners();
   }
@@ -42,6 +47,11 @@ class AgendamentosProvider extends ChangeNotifier {
 
   Future<void> cancelar(String id) async {
     await _service.cancelar(id);
+    await carregar();
+  }
+
+  Future<void> excluir(String id) async {
+    await _service.excluir(id);
     await carregar();
   }
 }

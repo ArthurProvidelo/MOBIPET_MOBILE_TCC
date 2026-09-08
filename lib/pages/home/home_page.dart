@@ -131,7 +131,9 @@ class _AtendimentoAtualCard extends StatelessWidget {
 
     final agendamento = provider.atual;
     final progresso = provider.progresso;
-    if (agendamento == null || progresso == null) {
+    // Se o atendimento já foi finalizado (Concluído) ou cancelado, ele não é
+    // mais "atual": some do card e volta o estado vazio.
+    if (agendamento == null || progresso == null || agendamento.isFinalizado) {
       return CustomCard(
         child: Row(
           children: [

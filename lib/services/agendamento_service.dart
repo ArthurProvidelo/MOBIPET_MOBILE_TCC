@@ -4,9 +4,22 @@ import 'api_client.dart';
 class AgendamentoService {
   final ApiClient _client = ApiClient();
 
+  /// Histórico completo do cliente (qualquer status), usado pela tela de
+  /// Agendamentos. `todos=1` faz o backend ignorar a janela de ±30 min que
+  /// vale para os lembretes da Home.
   Future<List<Agendamento>> listar() async {
-    final resposta = await _client.get('/agendamentos') as List<dynamic>;
+    final resposta = await _client.get('/agendamentos?todos=1') as List<dynamic>;
     final lista = resposta.map((e) => Agendamento.fromJson(e as Map<String, dynamic>)).toList();
+    lista.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    return lista;
+  }
+
+  /// Próximos agendamentos do cliente (pendentes e futuros), já filtrados e
+  /// ordenados pelo backend em `GET /agendamentos/proximos`.
+  Future<List<Agendamento>> proximos() async {
+    final resposta = await _client.get('/agendamentos/proximos');
+    final dados = resposta is Map<String, dynamic> ? resposta['agendamentos'] as List<dynamic>? ?? const [] : resposta as List<dynamic>;
+    final lista = dados.map((e) => Agendamento.fromJson(e as Map<String, dynamic>)).toList();
     lista.sort((a, b) => a.dateTime.compareTo(b.dateTime));
     return lista;
   }
@@ -31,6 +44,12 @@ class AgendamentoService {
 
   Future<void> cancelar(String id) {
     return _client.patch('/agendamentos/$id/cancelar');
+  }
+
+  /// Exclui o agendamento definitivamente. Usado para limpar do histórico
+  /// agendamentos já finalizados (Concluído) ou cancelados.
+  Future<void> excluir(String id) {
+    return _client.delete('/agendamentos/$id');
   }
 
   /// Agendamento "atual" do cliente: o que já está em atendimento (Banho)

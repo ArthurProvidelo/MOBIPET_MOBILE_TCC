@@ -58,16 +58,24 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 96,
-                  height: 96,
+                  width: 128,
+                  height: 128,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(28),
+                    color: AppColors.white.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 24, offset: const Offset(0, 10)),
                     ],
                   ),
-                  child: const Icon(Icons.pets_rounded, size: 52, color: AppColors.primary),
+                  child: Image.asset(
+                    'assets/images/logo_branco.png',
+                    width: 92,
+                    height: 92,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.pets_rounded, size: 52, color: AppColors.white),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Text(

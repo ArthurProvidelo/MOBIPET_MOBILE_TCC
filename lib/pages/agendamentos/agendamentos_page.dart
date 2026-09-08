@@ -42,9 +42,13 @@ class AgendamentosPage extends StatelessWidget {
                       separatorBuilder: (_, __) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
                         final agendamento = agendamentosProvider.agendamentos[index];
+                        // Em andamento não pode ser removido; agendado é
+                        // cancelado; concluído/cancelado é excluído do histórico.
+                        final podeRemover = agendamento.status != StatusAgendamento.emAndamento;
+                        final ehCancelamento = agendamento.status == StatusAgendamento.agendado;
                         return Dismissible(
                           key: ValueKey(agendamento.id),
-                          direction: DismissDirection.endToStart,
+                          direction: podeRemover ? DismissDirection.endToStart : DismissDirection.none,
                           background: Container(
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -55,25 +59,34 @@ class AgendamentosPage extends StatelessWidget {
                             child: const Icon(Icons.delete_outline_rounded, color: AppColors.white),
                           ),
                           confirmDismiss: (_) async {
-                            if (agendamento.status != StatusAgendamento.agendado) {
+                            if (!podeRemover) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Apenas agendamentos futuros podem ser cancelados.')),
+                                const SnackBar(content: Text('Não é possível excluir um agendamento em andamento.')),
                               );
                               return false;
                             }
                             return ConfirmDialog.show(
                               context,
-                              title: 'Cancelar agendamento',
-                              message: 'Deseja cancelar este agendamento?',
-                              confirmLabel: 'Cancelar agendamento',
+                              title: ehCancelamento ? 'Cancelar agendamento' : 'Excluir agendamento',
+                              message: ehCancelamento
+                                  ? 'Deseja cancelar este agendamento?'
+                                  : 'Deseja excluir este agendamento do histórico?',
+                              confirmLabel: ehCancelamento ? 'Cancelar agendamento' : 'Excluir',
                               destructive: true,
                             );
                           },
                           onDismissed: (_) async {
-                            await context.read<AgendamentosProvider>().cancelar(agendamento.id);
+                            final provider = context.read<AgendamentosProvider>();
+                            if (ehCancelamento) {
+                              await provider.cancelar(agendamento.id);
+                            } else {
+                              await provider.excluir(agendamento.id);
+                            }
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Agendamento cancelado')),
+                              SnackBar(
+                                content: Text(ehCancelamento ? 'Agendamento cancelado' : 'Agendamento excluído'),
+                              ),
                             );
                           },
                           child: _AgendamentoCard(agendamento: agendamento),
@@ -153,6 +166,33 @@ class _AgendamentoCard extends StatelessWidget {
                 },
                 style: TextButton.styleFrom(foregroundColor: AppColors.danger),
                 child: const Text('Cancelar'),
+              ),
+            ),
+          ] else if (agendamento.status == StatusAgendamento.concluido ||
+              agendamento.status == StatusAgendamento.cancelado) ...[
+            const SizedBox(height: 14),
+            const Divider(),
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () async {
+                  final confirmar = await ConfirmDialog.show(
+                    context,
+                    title: 'Excluir agendamento',
+                    message: 'Deseja excluir este agendamento do histórico?',
+                    confirmLabel: 'Excluir',
+                    destructive: true,
+                  );
+                  if (!context.mounted || !confirmar) return;
+                  await context.read<AgendamentosProvider>().excluir(agendamento.id);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Agendamento excluído')),
+                  );
+                },
+                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                child: const Text('Excluir'),
               ),
             ),
           ],
