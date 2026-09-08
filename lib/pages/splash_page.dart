@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import '../theme/app_assets.dart';
 import '../theme/app_colors.dart';
 import 'auth/login_page.dart';
 import 'main_navigation_page.dart';
@@ -58,23 +59,22 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 128,
-                  height: 128,
+                  width: 132,
+                  height: 132,
                   alignment: Alignment.center,
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.12),
+                    color: AppColors.white,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 24, offset: const Offset(0, 10)),
                     ],
                   ),
                   child: Image.asset(
-                    'assets/images/logo_branco.png',
-                    width: 92,
-                    height: 92,
+                    AppAssets.logoColorida,
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.pets_rounded, size: 52, color: AppColors.white),
+                        const Icon(Icons.pets_rounded, size: 52, color: AppColors.primary),
                   ),
                 ),
                 const SizedBox(height: 24),

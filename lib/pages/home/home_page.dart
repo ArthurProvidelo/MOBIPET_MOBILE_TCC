@@ -205,7 +205,25 @@ class _AtendimentoAtualCard extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: provider.avancando || agendamento.isFinalizado
                   ? null
-                  : () => provider.simularLeituraRfid(),
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final ok = await provider.simularLeituraRfid();
+                      if (!context.mounted) return;
+                      if (!ok) {
+                        messenger.showSnackBar(SnackBar(
+                          content: Text(
+                            provider.erro ?? 'Não foi possível avançar a etapa.',
+                          ),
+                        ));
+                        return;
+                      }
+                      // Check-in / finalização mudaram o status no backend:
+                      // recarrega as telas que dependem disso.
+                      if (provider.ultimaAcaoMudouBackend) {
+                        context.read<AgendamentosProvider>().carregar();
+                        context.read<PetsProvider>().carregar();
+                      }
+                    },
               icon: provider.avancando
                   ? const SizedBox(
                       width: 16,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../state/app_state.dart';
+import '../../theme/app_assets.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_text_field.dart';
@@ -279,7 +280,7 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Image.asset(
-            'assets/images/logo_branco.png',
+            AppAssets.logoBranca,
             width: 46,
             height: 46,
             fit: BoxFit.contain,

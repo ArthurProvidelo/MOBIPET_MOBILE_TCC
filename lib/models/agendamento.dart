@@ -49,8 +49,15 @@ class Agendamento {
   static StatusAgendamento _statusFromString(String? valor) {
     final normalizado = (valor ?? '').toLowerCase();
     if (normalizado.contains('cancel')) return StatusAgendamento.cancelado;
-    if (normalizado.contains('andamento') || normalizado.contains('banho')) return StatusAgendamento.emAndamento;
     if (normalizado.contains('conclu') || normalizado.contains('finaliz')) return StatusAgendamento.concluido;
+    // Backend (AgendamentoController::ETAPAS / PetController) usa a string
+    // "Em atendimento". "andamento" e "banho" ficam por compatibilidade com
+    // versões anteriores do painel web.
+    if (normalizado.contains('atendimento') ||
+        normalizado.contains('andamento') ||
+        normalizado.contains('banho')) {
+      return StatusAgendamento.emAndamento;
+    }
     return StatusAgendamento.agendado;
   }
 

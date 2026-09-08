@@ -54,15 +54,27 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
 
     Agendamento? atualizado;
     int subEtapaLocal = _subEtapaLocal;
-    if (agendamento.status == StatusAgendamento.agendado) {
-      atualizado = await _service.iniciar(agendamento.id);
-      subEtapaLocal = 1;
-    } else if (progresso.proximaAcaoFinaliza) {
-      atualizado = await _service.avancar(agendamento.id);
-      subEtapaLocal = 0;
-    } else {
-      atualizado = agendamento;
-      subEtapaLocal = (_subEtapaLocal + 1).clamp(1, progresso.etapas.length - 2);
+    bool mudouBackend = false;
+    try {
+      if (agendamento.status == StatusAgendamento.agendado) {
+        atualizado = await _service.iniciar(agendamento.id);
+        subEtapaLocal = 1;
+        mudouBackend = true;
+      } else if (progresso.proximaAcaoFinaliza) {
+        atualizado = await _service.avancar(agendamento.id);
+        subEtapaLocal = 0;
+        mudouBackend = true;
+      } else {
+        atualizado = agendamento;
+        subEtapaLocal = (_subEtapaLocal + 1).clamp(1, progresso.etapas.length - 2);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _avancando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível avançar a etapa: $e')),
+      );
+      return;
     }
 
     if (!mounted) return;
@@ -71,6 +83,8 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
       _subEtapaLocal = subEtapaLocal;
       _avancando = false;
     });
+    // Mantém a lista de pets/atendimentos em sincronia com o novo status.
+    if (mudouBackend) context.read<PetsProvider>().carregar();
   }
 
   @override

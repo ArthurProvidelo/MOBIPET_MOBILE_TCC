@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../state/app_state.dart';
+import '../../theme/app_assets.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_text_field.dart';
@@ -263,7 +264,7 @@ Route<T> _slideRoute<T>(Widget page) {
   );
 }
 
-/// Logo com anel de brilho que pulsa suavemente em loop.
+/// Logo que pulsa de leve em loop, sem moldura.
 class _AnimatedLogo extends StatefulWidget {
   const _AnimatedLogo();
 
@@ -296,31 +297,18 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
       animation: _controller,
       builder: (context, child) {
         final t = Curves.easeInOut.transform(_controller.value);
-        return Container(
-          width: 128,
-          height: 128,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.white.withValues(alpha: 0.28 + 0.24 * t),
-                blurRadius: 26 + 22 * t,
-                spreadRadius: 2 + 6 * t,
-              ),
-            ],
-          ),
+        return Transform.scale(
+          scale: 1 + 0.04 * t,
           child: child,
         );
       },
       child: Image.asset(
-        'assets/images/logo_branco.png',
-        width: 92,
-        height: 92,
+        AppAssets.logoBranca,
+        width: 160,
+        height: 160,
         fit: BoxFit.contain,
         errorBuilder: (_, __, ___) =>
-            const Icon(Icons.pets_rounded, size: 50, color: AppColors.white),
+            const Icon(Icons.pets_rounded, size: 90, color: AppColors.white),
       ),
     );
   }
