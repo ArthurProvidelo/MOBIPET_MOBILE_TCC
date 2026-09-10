@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../navigation/app_page_route.dart';
 import '../../state/pets_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
@@ -29,7 +30,7 @@ class PetsPage extends StatelessWidget {
                     message: 'Cadastre seu primeiro pet para acompanhar os atendimentos.',
                     actionLabel: 'Cadastrar pet',
                     onAction: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const PetFormPage()),
+                      AppPageRoute.modal((_) => const PetFormPage()),
                     ),
                   )
                 : RefreshIndicator(
@@ -72,7 +73,7 @@ class PetsPage extends StatelessWidget {
                               MaterialPageRoute(builder: (_) => PetDetailsPage(petId: pet.id)),
                             ),
                             onEdit: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => PetFormPage(petId: pet.id)),
+                              AppPageRoute.modal((_) => PetFormPage(petId: pet.id)),
                             ),
                             onAcompanhar: () => Navigator.of(context).push(
                               MaterialPageRoute(builder: (_) => PetAcompanhamentoPage(petId: pet.id)),
@@ -85,7 +86,7 @@ class PetsPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PetFormPage()),
+          AppPageRoute.modal((_) => const PetFormPage()),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,

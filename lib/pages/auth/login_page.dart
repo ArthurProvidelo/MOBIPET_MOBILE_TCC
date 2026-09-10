@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../navigation/app_page_route.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_assets.dart';
 import '../../theme/app_colors.dart';
@@ -41,7 +42,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     if (sucesso) {
       Navigator.of(context).pushReplacement(
-        _fadeRoute(const MainNavigationPage()),
+        AppPageRoute.fade((_) => const MainNavigationPage()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,15 +123,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-Route<T> _fadeRoute<T>(Widget page) {
-  return PageRouteBuilder<T>(
-    transitionDuration: const Duration(milliseconds: 350),
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (_, animation, __, child) =>
-        FadeTransition(opacity: animation, child: child),
-  );
-}
-
 class _FormCard extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController emailController;
@@ -205,7 +197,7 @@ class _FormCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const RecuperarSenhaPage()),
+                  AppPageRoute.modal((_) => const RecuperarSenhaPage()),
                 ),
                 child: const Text('Esqueci minha senha'),
               ),
@@ -234,7 +226,7 @@ class _FormCard extends StatelessWidget {
             const SizedBox(height: 14),
             OutlinedButton.icon(
               onPressed: () => Navigator.of(context).push(
-                _slideRoute(const CriarContaPage()),
+                AppPageRoute.modal((_) => const CriarContaPage()),
               ),
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
               label: const Text('Criar uma conta'),
@@ -245,23 +237,6 @@ class _FormCard extends StatelessWidget {
       ),
     );
   }
-}
-
-Route<T> _slideRoute<T>(Widget page) {
-  return PageRouteBuilder<T>(
-    transitionDuration: const Duration(milliseconds: 320),
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (_, animation, __, child) {
-      final offset = Tween<Offset>(
-        begin: const Offset(0, 0.06),
-        end: Offset.zero,
-      ).chain(CurveTween(curve: Curves.easeOutCubic)).animate(animation);
-      return FadeTransition(
-        opacity: animation,
-        child: SlideTransition(position: offset, child: child),
-      );
-    },
-  );
 }
 
 /// Logo que pulsa de leve em loop, sem moldura.

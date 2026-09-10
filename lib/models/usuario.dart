@@ -4,6 +4,7 @@ class Usuario {
   final String email;
   final String telefone;
   final String cpf;
+  final String cep;
   final String endereco;
 
   const Usuario({
@@ -12,6 +13,7 @@ class Usuario {
     required this.email,
     required this.telefone,
     required this.cpf,
+    required this.cep,
     required this.endereco,
   });
 
@@ -22,6 +24,7 @@ class Usuario {
       email: json['email'] as String,
       telefone: json['telefone'] as String? ?? '',
       cpf: json['cpf'] as String? ?? '',
+      cep: json['cep'] as String? ?? '',
       endereco: json['endereco'] as String? ?? '',
     );
   }
@@ -30,6 +33,7 @@ class Usuario {
     String? nome,
     String? email,
     String? telefone,
+    String? cep,
     String? endereco,
   }) {
     return Usuario(
@@ -38,6 +42,7 @@ class Usuario {
       email: email ?? this.email,
       telefone: telefone ?? this.telefone,
       cpf: cpf,
+      cep: cep ?? this.cep,
       endereco: endereco ?? this.endereco,
     );
   }

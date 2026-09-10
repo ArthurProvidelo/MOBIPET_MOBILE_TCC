@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 
 class AppTextField extends StatefulWidget {
@@ -8,10 +9,14 @@ class AppTextField extends StatefulWidget {
   final bool obscureText;
   final TextInputType keyboardType;
   final IconData? prefixIcon;
+  final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final int maxLines;
   final bool enabled;
+  final bool readOnly;
   final void Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
+  final String? helperText;
 
   const AppTextField({
     super.key,
@@ -21,10 +26,14 @@ class AppTextField extends StatefulWidget {
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
     this.prefixIcon,
+    this.suffixIcon,
     this.validator,
     this.maxLines = 1,
     this.enabled = true,
+    this.readOnly = false,
     this.onChanged,
+    this.inputFormatters,
+    this.helperText,
   });
 
   @override
@@ -83,10 +92,14 @@ class _AppTextFieldState extends State<AppTextField> {
         validator: widget.validator,
         maxLines: widget.maxLines,
         enabled: widget.enabled,
+        readOnly: widget.readOnly,
         onChanged: widget.onChanged,
+        inputFormatters: widget.inputFormatters,
         decoration: InputDecoration(
           labelText: widget.label,
           hintText: widget.hint,
+          helperText: widget.helperText,
+          helperMaxLines: 3,
           prefixIcon: widget.prefixIcon != null
               ? AnimatedScale(
                   scale: _focused ? 1.12 : 1.0,
@@ -104,7 +117,7 @@ class _AppTextFieldState extends State<AppTextField> {
                   ),
                   onPressed: () => setState(() => _obscured = !_obscured),
                 )
-              : null,
+              : widget.suffixIcon,
         ),
       ),
     );

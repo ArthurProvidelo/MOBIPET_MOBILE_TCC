@@ -1,17 +1,24 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/usuario.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/foto_perfil_storage.dart';
 
 class AppState extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final FotoPerfilStorage _fotoStorage = FotoPerfilStorage();
 
   Usuario? _usuario;
+  File? _fotoPerfil;
   bool _carregando = false;
   bool _verificandoSessao = true;
   String? erro;
 
   Usuario? get usuario => _usuario;
+  File? get fotoPerfil => _fotoPerfil;
   bool get autenticado => _usuario != null;
   bool get carregando => _carregando;
 
@@ -22,6 +29,7 @@ class AppState extends ChangeNotifier {
   /// salvo localmente. Retorna true se havia uma sessão válida.
   Future<bool> tentarAutoLogin() async {
     _usuario = await _authService.usuarioAtual();
+    await _carregarFotoPerfil();
     _verificandoSessao = false;
     notifyListeners();
     return autenticado;
@@ -32,6 +40,7 @@ class AppState extends ChangeNotifier {
     erro = null;
     try {
       _usuario = await _authService.login(email: email, senha: senha);
+      await _carregarFotoPerfil();
       return true;
     } on ApiException catch (e) {
       erro = e.message;
@@ -47,6 +56,7 @@ class AppState extends ChangeNotifier {
     required String email,
     required String telefone,
     required String senha,
+    required String cep,
     required String endereco,
   }) async {
     _setCarregando(true);
@@ -58,8 +68,10 @@ class AppState extends ChangeNotifier {
         email: email,
         telefone: telefone,
         senha: senha,
+        cep: cep,
         endereco: endereco,
       );
+      await _carregarFotoPerfil();
       return true;
     } on ApiException catch (e) {
       erro = e.message;
@@ -87,6 +99,7 @@ class AppState extends ChangeNotifier {
     required String nome,
     required String email,
     required String telefone,
+    required String cep,
     required String endereco,
   }) async {
     _setCarregando(true);
@@ -96,6 +109,7 @@ class AppState extends ChangeNotifier {
         nome: nome,
         email: email,
         telefone: telefone,
+        cep: cep,
         endereco: endereco,
       );
       return true;
@@ -105,6 +119,20 @@ class AppState extends ChangeNotifier {
     } finally {
       _setCarregando(false);
     }
+  }
+
+  /// Define (ou remove, se [imagem] for null) a foto de perfil. Guardada
+  /// apenas localmente por enquanto — ver [FotoPerfilStorage].
+  Future<void> definirFotoPerfil(XFile? imagem) async {
+    final id = _usuario?.id;
+    if (id == null) return;
+    if (imagem == null) {
+      await _fotoStorage.remover(id);
+      _fotoPerfil = null;
+    } else {
+      _fotoPerfil = await _fotoStorage.salvar(id, imagem);
+    }
+    notifyListeners();
   }
 
   Future<bool> alterarSenha({required String senhaAtual, required String novaSenha}) async {
@@ -124,7 +152,13 @@ class AppState extends ChangeNotifier {
   Future<void> logout() async {
     await _authService.logout();
     _usuario = null;
+    _fotoPerfil = null;
     notifyListeners();
+  }
+
+  Future<void> _carregarFotoPerfil() async {
+    final id = _usuario?.id;
+    _fotoPerfil = id == null ? null : await _fotoStorage.carregar(id);
   }
 
   void _setCarregando(bool value) {

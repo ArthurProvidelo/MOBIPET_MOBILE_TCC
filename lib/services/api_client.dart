@@ -20,13 +20,13 @@ class ApiException implements Exception {
 
 /// Base URL da API Laravel.
 ///
-/// O `php artisan serve` está rodando com `--host=10.141.130.67`, ou seja,
+/// O servidor PHP está rodando com `-S 192.168.0.113:8080`, ou seja,
 /// só aceita conexões nesse IP da rede local (não em localhost/10.0.2.2).
 /// Isso funciona tanto para emulador quanto para dispositivo físico na
 /// mesma rede Wi-Fi. Se reiniciar o servidor em outro host/porta, atualize
 /// a constante abaixo.
 class ApiConfig {
-  static const String _hostLaravel = '10.141.130.36:8000';
+  static const String _hostLaravel = '192.168.0.113:8080';
 
   static String get baseUrl => 'http://$_hostLaravel/api';
 }

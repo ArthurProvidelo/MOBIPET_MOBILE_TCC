@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>O MobiPet usa a câmera para você tirar a foto do seu perfil.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O MobiPet acessa suas fotos para você escolher a imagem do seu perfil.</string>
 </dict>
 </plist>

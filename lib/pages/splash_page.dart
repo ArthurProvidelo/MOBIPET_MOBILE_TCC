@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../navigation/app_page_route.dart';
 import '../state/app_state.dart';
 import '../theme/app_assets.dart';
 import '../theme/app_colors.dart';
@@ -36,7 +37,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
 
     final autenticado = resultados[0] as bool;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => autenticado ? const MainNavigationPage() : const LoginPage()),
+      AppPageRoute.fade((_) => autenticado ? const MainNavigationPage() : const LoginPage()),
     );
   }
 

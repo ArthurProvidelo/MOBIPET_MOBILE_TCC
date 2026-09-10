@@ -17,6 +17,7 @@ class AuthService {
     required String email,
     required String telefone,
     required String senha,
+    required String cep,
     required String endereco,
   }) async {
     final resposta = await _client.post('/register', {
@@ -25,6 +26,7 @@ class AuthService {
       'email': email,
       'telefone': telefone,
       'senha': senha,
+      'cep': cep,
       'endereco': endereco,
     });
     await TokenStorage.salvar(resposta['token'] as String);
@@ -49,12 +51,14 @@ class AuthService {
     required String nome,
     required String email,
     required String telefone,
+    required String cep,
     required String endereco,
   }) async {
     final resposta = await _client.put('/perfil', {
       'nome': nome,
       'email': email,
       'telefone': telefone,
+      'cep': cep,
       'endereco': endereco,
     });
     return Usuario.fromJson(resposta['cliente'] as Map<String, dynamic>);

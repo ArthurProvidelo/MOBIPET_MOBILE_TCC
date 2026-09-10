@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../navigation/app_page_route.dart';
+import '../../services/viacep_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_assets.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_background.dart';
@@ -23,9 +26,13 @@ class _CriarContaPageState extends State<CriarContaPage> {
   final _cpfController = TextEditingController();
   final _emailController = TextEditingController();
   final _telefoneController = TextEditingController();
+  final _cepController = TextEditingController();
   final _enderecoController = TextEditingController();
   final _senhaController = TextEditingController();
   final _confirmarSenhaController = TextEditingController();
+
+  final _viaCepService = ViaCepService();
+  bool _buscandoCep = false;
 
   @override
   void dispose() {
@@ -33,10 +40,36 @@ class _CriarContaPageState extends State<CriarContaPage> {
     _cpfController.dispose();
     _emailController.dispose();
     _telefoneController.dispose();
+    _cepController.dispose();
     _enderecoController.dispose();
     _senhaController.dispose();
     _confirmarSenhaController.dispose();
     super.dispose();
+  }
+
+  Future<void> _buscarCep() async {
+    final digits = _cepController.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length != 8) return;
+
+    setState(() => _buscandoCep = true);
+    try {
+      final endereco = await _viaCepService.buscar(digits);
+      if (!mounted) return;
+      if (endereco == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('CEP não encontrado')),
+        );
+        return;
+      }
+      _enderecoController.text = endereco.enderecoFormatado;
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível buscar o CEP')),
+      );
+    } finally {
+      if (mounted) setState(() => _buscandoCep = false);
+    }
   }
 
   Future<void> _criarConta() async {
@@ -48,6 +81,7 @@ class _CriarContaPageState extends State<CriarContaPage> {
       email: _emailController.text,
       telefone: _telefoneController.text,
       senha: _senhaController.text,
+      cep: _cepController.text,
       endereco: _enderecoController.text,
     );
     if (!mounted) return;
@@ -56,7 +90,7 @@ class _CriarContaPageState extends State<CriarContaPage> {
         const SnackBar(content: Text('Conta criada com sucesso!')),
       );
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainNavigationPage()),
+        AppPageRoute.fade((_) => const MainNavigationPage()),
         (route) => false,
       );
     } else {
@@ -144,6 +178,7 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                 label: 'CPF',
                                 controller: _cpfController,
                                 keyboardType: TextInputType.number,
+                                inputFormatters: [CpfInputFormatter()],
                                 prefixIcon: Icons.badge_outlined,
                                 validator: Validators.cpf,
                               ),
@@ -166,8 +201,41 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                 label: 'Telefone',
                                 controller: _telefoneController,
                                 keyboardType: TextInputType.phone,
+                                inputFormatters: [TelefoneInputFormatter()],
                                 prefixIcon: Icons.phone_outlined,
                                 validator: Validators.telefone,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            FadeSlideIn(
+                              delay: next(),
+                              child: AppTextField(
+                                label: 'CEP',
+                                controller: _cepController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [CepInputFormatter()],
+                                prefixIcon: Icons.location_on_outlined,
+                                validator: (v) => Validators.obrigatorio(
+                                    v, 'Informe o CEP'),
+                                onChanged: (v) {
+                                  if (v.replaceAll(RegExp(r'\D'), '').length == 8) {
+                                    _buscarCep();
+                                  }
+                                },
+                                suffixIcon: _buscandoCep
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(14),
+                                        child: SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        ),
+                                      )
+                                    : IconButton(
+                                        icon: const Icon(Icons.search_rounded),
+                                        onPressed: _buscarCep,
+                                      ),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -190,6 +258,8 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                 obscureText: true,
                                 prefixIcon: Icons.lock_outline_rounded,
                                 validator: Validators.senha,
+                                helperText:
+                                    'Use ao menos 6 caracteres, combinando letras maiúsculas, minúsculas, números e símbolos.',
                               ),
                             ),
                             const SizedBox(height: 16),

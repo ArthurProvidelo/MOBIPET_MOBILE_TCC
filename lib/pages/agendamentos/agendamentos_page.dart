@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/agendamento.dart';
+import '../../navigation/app_page_route.dart';
 import '../../state/agendamentos_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/date_formatters.dart';
@@ -31,7 +32,7 @@ class AgendamentosPage extends StatelessWidget {
                     message: 'Agende um serviço para o seu pet.',
                     actionLabel: 'Novo agendamento',
                     onAction: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const NovoAgendamentoPage()),
+                      AppPageRoute.modal((_) => const NovoAgendamentoPage()),
                     ),
                   )
                 : RefreshIndicator(
@@ -97,7 +98,7 @@ class AgendamentosPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const NovoAgendamentoPage()),
+          AppPageRoute.modal((_) => const NovoAgendamentoPage()),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,

@@ -13,7 +13,8 @@ dependencies:
   provider: ^6.1.1
   http: ^1.2.0
   flutter_secure_storage: ^9.2.2
-  salomon_bottom_bar: ^3.3.2
+  image_picker: ^1.1.2
+  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_test:
@@ -25,3 +26,13 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+  fonts:
+    # Iconly (por piqo) — ícones gratuitos. Fontes extraídas do pacote
+    # flutter_iconly (MIT) e embutidas localmente porque o pacote ainda
+    # declara SDK Dart 2.x. Ver lib/theme/iconly_icons.dart.
+    - family: IconlyLight
+      fonts:
+        - asset: assets/fonts/IconlyLight.ttf
+    - family: IconlyBold
+      fonts:
+        - asset: assets/fonts/IconlyBold.ttf

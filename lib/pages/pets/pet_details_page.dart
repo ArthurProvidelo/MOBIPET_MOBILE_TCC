@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../navigation/app_page_route.dart';
 import '../../state/pets_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
@@ -31,7 +32,7 @@ class PetDetailsPage extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => PetFormPage(petId: pet.id)),
+              AppPageRoute.modal((_) => PetFormPage(petId: pet.id)),
             ),
             icon: const Icon(Icons.edit_outlined),
           ),
