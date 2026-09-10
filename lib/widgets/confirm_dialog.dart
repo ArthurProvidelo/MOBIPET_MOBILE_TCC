@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../utils/haptics.dart';
 
 class ConfirmDialog {
   static Future<bool> show(
@@ -10,6 +11,8 @@ class ConfirmDialog {
     String cancelLabel = 'Cancelar',
     bool destructive = false,
   }) async {
+    // Um toque ao abrir: a decisão pede atenção.
+    Haptics.medium();
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -17,11 +20,21 @@ class ConfirmDialog {
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () {
+              Haptics.light();
+              Navigator.of(context).pop(false);
+            },
             child: Text(cancelLabel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () {
+              if (destructive) {
+                Haptics.error();
+              } else {
+                Haptics.success();
+              }
+              Navigator.of(context).pop(true);
+            },
             style: TextButton.styleFrom(
               foregroundColor: destructive ? AppColors.danger : AppColors.primary,
             ),

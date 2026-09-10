@@ -7,6 +7,7 @@ import 'state/atendimento_provider.dart';
 import 'state/funcionarios_provider.dart';
 import 'state/pets_provider.dart';
 import 'state/servicos_provider.dart';
+import 'theme/app_scroll_behavior.dart';
 import 'theme/app_theme.dart';
 
 class MobipetApp extends StatelessWidget {
@@ -27,6 +28,7 @@ class MobipetApp extends StatelessWidget {
         title: 'MobiPet Monitoramento',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        scrollBehavior: const AppScrollBehavior(),
         home: const SplashPage(),
       ),
     );

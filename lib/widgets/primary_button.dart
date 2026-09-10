@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../utils/haptics.dart';
 
 /// Botão principal do app.
 ///
@@ -32,6 +33,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
 
   void _setPressed(bool value) {
     if (!_enabled) return;
+    if (value && !_pressed) Haptics.light();
     setState(() => _pressed = value);
   }
 

@@ -7,6 +7,8 @@ import '../state/pets_provider.dart';
 import '../state/servicos_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/iconly_icons.dart';
+import '../utils/haptics.dart';
+import '../widgets/pressable.dart';
 import 'agendamentos/agendamentos_page.dart';
 import 'agendamentos/novo_agendamento_page.dart';
 import 'home/home_page.dart';
@@ -42,7 +44,14 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     });
   }
 
+  void _selecionarAba(int index) {
+    if (index == _currentIndex) return;
+    Haptics.selection();
+    setState(() => _currentIndex = index);
+  }
+
   void _abrirAcoesRapidas() {
+    Haptics.medium();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.white,
@@ -99,7 +108,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: _FloatingNavBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: _selecionarAba,
         onCenterTap: _abrirAcoesRapidas,
       ),
     );
@@ -190,9 +199,9 @@ class _NavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: InkWell(
+      child: Pressable(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        haptic: false, // o toque háptico de troca de aba é disparado no pai
         child: Center(
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
@@ -207,11 +216,17 @@ class _NavButton extends StatelessWidget {
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(
-              selected ? item.bold : item.light,
-              size: 24,
-              color: selected ? AppColors.primary : AppColors.textSecondary,
-              semanticLabel: item.label,
+            child: AnimatedScale(
+              // Pequeno "salto" ao ativar a aba (overshoot do easeOutBack).
+              scale: selected ? 1.0 : 0.9,
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutBack,
+              child: Icon(
+                selected ? item.bold : item.light,
+                size: 24,
+                color: selected ? AppColors.primary : AppColors.textSecondary,
+                semanticLabel: item.label,
+              ),
             ),
           ),
         ),
@@ -229,28 +244,26 @@ class _CenterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: const Icon(IconlyBold.plus, color: AppColors.white, size: 26),
+      child: Pressable(
+        onTap: onTap,
+        haptic: false, // quem chama já dispara Haptics.medium
+        pressedScale: 0.92,
+        child: Container(
+          width: 50,
+          height: 50,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          child: const Icon(IconlyBold.plus, color: AppColors.white, size: 26),
         ),
       ),
     );

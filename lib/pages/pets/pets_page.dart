@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../../navigation/app_page_route.dart';
 import '../../state/pets_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/fade_slide_in.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/pet_card.dart';
 import 'pet_acompanhamento_page.dart';
@@ -41,7 +43,10 @@ class PetsPage extends StatelessWidget {
                       separatorBuilder: (_, __) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
                         final pet = provider.pets[index];
-                        return Dismissible(
+                        return FadeSlideIn(
+                          delay: Duration(milliseconds: (index * 55).clamp(0, 330)),
+                          offsetY: 16,
+                          child: Dismissible(
                           key: ValueKey(pet.id),
                           direction: DismissDirection.endToStart,
                           background: Container(
@@ -61,6 +66,7 @@ class PetsPage extends StatelessWidget {
                             destructive: true,
                           ),
                           onDismissed: (_) async {
+                            Haptics.success();
                             await context.read<PetsProvider>().remover(pet.id);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -78,6 +84,7 @@ class PetsPage extends StatelessWidget {
                             onAcompanhar: () => Navigator.of(context).push(
                               MaterialPageRoute(builder: (_) => PetAcompanhamentoPage(petId: pet.id)),
                             ),
+                          ),
                           ),
                         );
                       },

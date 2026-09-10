@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -20,12 +21,17 @@ class FotoPerfilStorage {
     if (kIsWeb) return null;
     final arquivo = await _arquivoDe(userId);
     await arquivo.writeAsBytes(await origem.readAsBytes(), flush: true);
+    // O caminho do arquivo não muda entre trocas de foto, então o cache de
+    // imagens do Flutter continuaria mostrando a imagem anterior. Removemos
+    // a entrada para forçar a releitura do disco.
+    await FileImage(arquivo).evict();
     return arquivo;
   }
 
   Future<void> remover(String userId) async {
     if (kIsWeb) return;
     final arquivo = await _arquivoDe(userId);
+    await FileImage(arquivo).evict();
     if (arquivo.existsSync()) await arquivo.delete();
   }
 

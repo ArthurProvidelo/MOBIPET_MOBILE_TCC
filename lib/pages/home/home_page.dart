@@ -8,7 +8,9 @@ import '../../state/pets_provider.dart';
 import '../../state/servicos_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/date_formatters.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/custom_card.dart';
+import '../../widgets/fade_slide_in.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/section_header.dart';
 import '../../utils/stage_utils.dart';
@@ -39,6 +41,7 @@ class HomePage extends StatelessWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
+            Haptics.light();
             await Future.wait([
               petsProvider.carregar(),
               agendamentosProvider.carregar(),
@@ -95,10 +98,14 @@ class HomePage extends StatelessWidget {
                   child: Text('Nenhum agendamento futuro no momento.'),
                 )
               else
-                ...agendamentosProvider.proximos.take(3).map(
-                      (a) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _AgendamentoResumo(agendamento: a, pets: petsProvider),
+                ...agendamentosProvider.proximos.take(3).toList().asMap().entries.map(
+                      (e) => FadeSlideIn(
+                        delay: Duration(milliseconds: e.key * 70),
+                        offsetY: 16,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _AgendamentoResumo(agendamento: e.value, pets: petsProvider),
+                        ),
                       ),
                     ),
             ],
@@ -210,6 +217,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
                       final ok = await provider.simularLeituraRfid();
                       if (!context.mounted) return;
                       if (!ok) {
+                        Haptics.error();
                         messenger.showSnackBar(SnackBar(
                           content: Text(
                             provider.erro ?? 'Não foi possível avançar a etapa.',
@@ -217,6 +225,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
                         ));
                         return;
                       }
+                      Haptics.success();
                       // Check-in / finalização mudaram o status no backend:
                       // recarrega as telas que dependem disso.
                       if (provider.ultimaAcaoMudouBackend) {

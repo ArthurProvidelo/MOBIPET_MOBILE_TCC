@@ -123,16 +123,23 @@ class AppState extends ChangeNotifier {
 
   /// Define (ou remove, se [imagem] for null) a foto de perfil. Guardada
   /// apenas localmente por enquanto — ver [FotoPerfilStorage].
-  Future<void> definirFotoPerfil(XFile? imagem) async {
+  ///
+  /// Retorna `true` quando a operação foi concluída. Retorna `false` se não há
+  /// usuário logado ou se a plataforma não suporta armazenamento local da foto
+  /// (ex: web), para que a tela possa avisar o usuário.
+  Future<bool> definirFotoPerfil(XFile? imagem) async {
     final id = _usuario?.id;
-    if (id == null) return;
+    if (id == null) return false;
     if (imagem == null) {
       await _fotoStorage.remover(id);
       _fotoPerfil = null;
-    } else {
-      _fotoPerfil = await _fotoStorage.salvar(id, imagem);
+      notifyListeners();
+      return true;
     }
+    final arquivo = await _fotoStorage.salvar(id, imagem);
+    _fotoPerfil = arquivo;
     notifyListeners();
+    return arquivo != null;
   }
 
   Future<bool> alterarSenha({required String senhaAtual, required String novaSenha}) async {

@@ -5,10 +5,12 @@ import '../../navigation/app_page_route.dart';
 import '../../state/agendamentos_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/date_formatters.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/custom_badge.dart';
 import '../../widgets/custom_card.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/fade_slide_in.dart';
 import '../../widgets/loading_view.dart';
 import 'detalhes_servico_page.dart';
 import 'novo_agendamento_page.dart';
@@ -47,7 +49,10 @@ class AgendamentosPage extends StatelessWidget {
                         // cancelado; concluído/cancelado é excluído do histórico.
                         final podeRemover = agendamento.status != StatusAgendamento.emAndamento;
                         final ehCancelamento = agendamento.status == StatusAgendamento.agendado;
-                        return Dismissible(
+                        return FadeSlideIn(
+                          delay: Duration(milliseconds: (index * 55).clamp(0, 330)),
+                          offsetY: 16,
+                          child: Dismissible(
                           key: ValueKey(agendamento.id),
                           direction: podeRemover ? DismissDirection.endToStart : DismissDirection.none,
                           background: Container(
@@ -77,6 +82,7 @@ class AgendamentosPage extends StatelessWidget {
                             );
                           },
                           onDismissed: (_) async {
+                            Haptics.success();
                             final provider = context.read<AgendamentosProvider>();
                             if (ehCancelamento) {
                               await provider.cancelar(agendamento.id);
@@ -91,6 +97,7 @@ class AgendamentosPage extends StatelessWidget {
                             );
                           },
                           child: _AgendamentoCard(agendamento: agendamento),
+                          ),
                         );
                       },
                     ),

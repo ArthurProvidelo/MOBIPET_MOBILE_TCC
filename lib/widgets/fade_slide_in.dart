@@ -52,6 +52,11 @@ class _FadeSlideInState extends State<FadeSlideIn>
 
   @override
   Widget build(BuildContext context) {
+    // "Reduzir movimento" ligado no sistema: entrega o conteúdo já no lugar,
+    // sem fade nem deslize.
+    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduceMotion) return widget.child;
+
     return FadeTransition(
       opacity: _fade,
       child: SlideTransition(position: _slide, child: widget.child),
