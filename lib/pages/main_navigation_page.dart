@@ -8,6 +8,8 @@ import '../state/servicos_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/iconly_icons.dart';
 import '../utils/haptics.dart';
+import '../utils/motion.dart';
+import '../widgets/blur_surface.dart';
 import '../widgets/pressable.dart';
 import 'agendamentos/agendamentos_page.dart';
 import 'agendamentos/novo_agendamento_page.dart';
@@ -25,13 +27,6 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
-
-  final List<Widget> _pages = const [
-    HomePage(),
-    PetsPage(),
-    AgendamentosPage(),
-    PerfilPage(),
-  ];
 
   @override
   void initState() {
@@ -54,7 +49,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     Haptics.medium();
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -105,7 +100,24 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      // As páginas são reconstruídas a cada build (não guardadas numa lista
+      // `const` reaproveitada): widgets idênticos entre builds fazem o
+      // Flutter pular a reconstrução deles, então uma troca de tema global
+      // (que não passa por Theme.of, e sim pelas cores estáticas de
+      // AppColors) nunca chegava até quem já estava "escondido" atrás do
+      // IndexedStack — o cartão de próximos agendamentos, por exemplo,
+      // ficava com as cores do tema anterior até a lista mudar por outro
+      // motivo. Widgets novos a cada build resolvem isso sem custo real,
+      // já que o IndexedStack preserva o estado de cada aba de qualquer forma.
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          HomePage(),
+          PetsPage(),
+          AgendamentosPage(),
+          PerfilPage(),
+        ],
+      ),
       bottomNavigationBar: _FloatingNavBar(
         currentIndex: _currentIndex,
         onTap: _selecionarAba,
@@ -142,10 +154,9 @@ class _FloatingNavBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         child: Container(
           height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            color: AppColors.white,
             borderRadius: BorderRadius.circular(36),
+            border: Border.all(color: AppColors.border, width: 1),
             boxShadow: [
               BoxShadow(
                 color: AppColors.shadow.withValues(alpha: 0.4),
@@ -154,30 +165,70 @@ class _FloatingNavBar extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            children: [
-              _NavButton(
-                item: _items[0],
-                selected: currentIndex == 0,
-                onTap: () => onTap(0),
+          // "Material" translúcido com desfoque — a tab bar deixa a página
+          // por trás borrada e visível em vez de escondida, como no iOS.
+          child: BlurSurface(
+            borderRadius: BorderRadius.circular(35),
+            color: AppColors.surface.withValues(alpha: 0.72),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Geometria dos 4 espaços de aba (o botão central tem
+                  // largura fixa e "quebra" a distribuição uniforme).
+                  const centerWidth = 70.0;
+                  const pillSize = 52.0;
+                  final slotWidth = (constraints.maxWidth - centerWidth) / 4;
+
+                  double centerXFor(int slot) {
+                    if (slot < 2) return slot * slotWidth + slotWidth / 2;
+                    final depoisDoCentro = slot - 2;
+                    return 2 * slotWidth + centerWidth + depoisDoCentro * slotWidth + slotWidth / 2;
+                  }
+
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // O "vidro líquido": uma cápsula translúcida que
+                      // desliza e assenta com uma leve mola atrás da aba
+                      // ativa — o mesmo princípio da tab bar do iOS 26.
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 460),
+                        curve: AppCurves.spring,
+                        left: centerXFor(currentIndex) - pillSize / 2,
+                        top: (constraints.maxHeight - pillSize) / 2,
+                        child: const _LiquidPill(size: pillSize),
+                      ),
+                      Row(
+                        children: [
+                          _NavButton(
+                            item: _items[0],
+                            selected: currentIndex == 0,
+                            onTap: () => onTap(0),
+                          ),
+                          _NavButton(
+                            item: _items[1],
+                            selected: currentIndex == 1,
+                            onTap: () => onTap(1),
+                          ),
+                          _CenterButton(onTap: onCenterTap),
+                          _NavButton(
+                            item: _items[2],
+                            selected: currentIndex == 2,
+                            onTap: () => onTap(2),
+                          ),
+                          _NavButton(
+                            item: _items[3],
+                            selected: currentIndex == 3,
+                            onTap: () => onTap(3),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
-              _NavButton(
-                item: _items[1],
-                selected: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _CenterButton(onTap: onCenterTap),
-              _NavButton(
-                item: _items[2],
-                selected: currentIndex == 2,
-                onTap: () => onTap(2),
-              ),
-              _NavButton(
-                item: _items[3],
-                selected: currentIndex == 3,
-                onTap: () => onTap(3),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -198,24 +249,15 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // O realce de "selecionado" agora é a cápsula de vidro que desliza por
+    // trás (ver _LiquidPill) — aqui só resta o ícone e o pequeno salto dele.
     return Expanded(
       child: Pressable(
         onTap: onTap,
         haptic: false, // o toque háptico de troca de aba é disparado no pai
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOut,
-            padding: EdgeInsets.symmetric(
-              horizontal: selected ? 16 : 12,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.12)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-            ),
+        child: SizedBox(
+          height: double.infinity,
+          child: Center(
             child: AnimatedScale(
               // Pequeno "salto" ao ativar a aba (overshoot do easeOutBack).
               scale: selected ? 1.0 : 0.9,
@@ -229,6 +271,43 @@ class _NavButton extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A cápsula de vidro translúcida que marca a aba ativa na tab bar,
+/// deslizando entre as posições com uma leve mola — o efeito "Liquid
+/// Glass" das tab bars do iOS 26.
+class _LiquidPill extends StatelessWidget {
+  final double size;
+
+  const _LiquidPill({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.primary.withValues(alpha: 0.16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.28)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.18),
+            blurRadius: 16,
+            spreadRadius: -2,
+          ),
+        ],
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.white.withValues(alpha: 0.14),
+            Colors.transparent,
+          ],
         ),
       ),
     );

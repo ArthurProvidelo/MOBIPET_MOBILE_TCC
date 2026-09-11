@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../utils/haptics.dart';
+import '../utils/motion.dart';
 
 /// Botão principal do app.
 ///
@@ -40,27 +41,28 @@ class _PrimaryButtonState extends State<PrimaryButton> {
   @override
   Widget build(BuildContext context) {
     final outlined = widget.outlined;
+    final onColor = outlined ? AppColors.primary : AppColors.white;
+    final disabledColor = AppColors.textTertiary;
 
     final content = widget.loading
         ? SizedBox(
-            height: 22,
-            width: 22,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.4,
-              color: outlined ? AppColors.primary : AppColors.white,
-            ),
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(strokeWidth: 2.4, color: onColor),
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (widget.icon != null) ...[
-                Icon(widget.icon, size: 20),
-                const SizedBox(width: 10),
+                Icon(widget.icon, size: 19),
+                const SizedBox(width: 9),
               ],
               Text(widget.label),
             ],
           );
+
+    final gradientEnd = Color.lerp(AppColors.primary, Colors.black, 0.16)!;
 
     return GestureDetector(
       onTapDown: (_) => _setPressed(true),
@@ -68,35 +70,34 @@ class _PrimaryButtonState extends State<PrimaryButton> {
       onTapCancel: () => _setPressed(false),
       onTap: _enabled ? widget.onPressed : null,
       child: AnimatedScale(
-        scale: _pressed ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
+        scale: _pressed ? 0.965 : 1.0,
+        duration: AppMotion.quick,
+        curve: AppCurves.spring,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          height: 56,
+          duration: AppMotion.quick,
+          curve: Curves.easeOut,
+          height: 52,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: outlined
+            gradient: outlined || !_enabled
                 ? null
                 : LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
-                    colors: _enabled
-                        ? const [AppColors.primary, Color(0xFF3E77B5)]
-                        : const [Color(0xFFB6C4D6), Color(0xFFB6C4D6)],
+                    colors: [AppColors.primary, gradientEnd],
                   ),
-            color: outlined ? Colors.transparent : null,
-            borderRadius: BorderRadius.circular(16),
+            color: outlined
+                ? Colors.transparent
+                : (_enabled ? null : AppColors.border),
+            borderRadius: BorderRadius.circular(14),
             border: outlined
-                ? Border.all(color: AppColors.primary, width: 1.4)
+                ? Border.all(color: _enabled ? AppColors.primary : AppColors.border, width: 1.3)
                 : null,
             boxShadow: outlined || !_enabled
                 ? null
                 : [
                     BoxShadow(
-                      color: AppColors.primary.withValues(
-                        alpha: _pressed ? 0.15 : 0.35,
-                      ),
+                      color: AppColors.primary.withValues(alpha: _pressed ? 0.15 : 0.32),
                       blurRadius: _pressed ? 8 : 18,
                       offset: Offset(0, _pressed ? 2 : 8),
                     ),
@@ -106,12 +107,10 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: outlined ? AppColors.primary : AppColors.white,
+              color: _enabled ? onColor : disabledColor,
             ),
             child: IconTheme.merge(
-              data: IconThemeData(
-                color: outlined ? AppColors.primary : AppColors.white,
-              ),
+              data: IconThemeData(color: _enabled ? onColor : disabledColor),
               child: content,
             ),
           ),

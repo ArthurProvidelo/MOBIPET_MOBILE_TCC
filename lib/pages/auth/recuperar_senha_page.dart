@@ -73,6 +73,8 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
               keyboardType: TextInputType.emailAddress,
               prefixIcon: Icons.mail_outline_rounded,
               validator: Validators.email,
+              textInputAction: TextInputAction.done,
+              onSubmitted: _enviar,
             ),
             const SizedBox(height: 28),
             PrimaryButton(label: 'Enviar instruções', onPressed: _enviar, loading: carregando),
@@ -90,7 +92,7 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), shape: BoxShape.circle),
-            child: const Icon(Icons.mark_email_read_outlined, size: 44, color: AppColors.success),
+            child: Icon(Icons.mark_email_read_outlined, size: 44, color: AppColors.success),
           ),
           const SizedBox(height: 24),
           Text('E-mail enviado!', style: Theme.of(context).textTheme.titleLarge),

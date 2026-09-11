@@ -21,12 +21,25 @@ class PetsPage extends StatelessWidget {
     final provider = context.watch<PetsProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Meus Pets')),
       body: SafeArea(
-        child: provider.carregando
-            ? const LoadingView()
-            : provider.pets.isEmpty
-                ? EmptyState(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: provider.carregar,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverAppBar.large(
+                title: const Text('Meus Pets'),
+                backgroundColor: AppColors.background,
+                surfaceTintColor: Colors.transparent,
+                titleTextStyle: Theme.of(context).textTheme.headlineLarge,
+              ),
+              if (provider.carregando)
+                const SliverFillRemaining(hasScrollBody: false, child: LoadingView())
+              else if (provider.pets.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: EmptyState(
                     icon: Icons.pets_rounded,
                     title: 'Nenhum pet cadastrado',
                     message: 'Cadastre seu primeiro pet para acompanhar os atendimentos.',
@@ -34,19 +47,22 @@ class PetsPage extends StatelessWidget {
                     onAction: () => Navigator.of(context).push(
                       AppPageRoute.modal((_) => const PetFormPage()),
                     ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: provider.carregar,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                      itemCount: provider.pets.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 14),
-                      itemBuilder: (context, index) {
-                        final pet = provider.pets[index];
-                        return FadeSlideIn(
-                          delay: Duration(milliseconds: (index * 55).clamp(0, 330)),
-                          offsetY: 16,
-                          child: Dismissible(
+                  ),
+                )
+              else
+                SliverToBoxAdapter(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                    itemCount: provider.pets.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                    itemBuilder: (context, index) {
+                      final pet = provider.pets[index];
+                      return FadeSlideIn(
+                        delay: Duration(milliseconds: (index * 55).clamp(0, 330)),
+                        offsetY: 16,
+                        child: Dismissible(
                           key: ValueKey(pet.id),
                           direction: DismissDirection.endToStart,
                           background: Container(
@@ -85,11 +101,14 @@ class PetsPage extends StatelessWidget {
                               MaterialPageRoute(builder: (_) => PetAcompanhamentoPage(petId: pet.id)),
                             ),
                           ),
-                          ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
+                ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(

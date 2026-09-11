@@ -123,10 +123,10 @@ class _CriarContaPageState extends State<CriarContaPage> {
                   offsetY: 40,
                   child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.background,
                       borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(34)),
+                          const BorderRadius.vertical(top: Radius.circular(34)),
                     ),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(26, 28, 26, 28),
@@ -272,6 +272,8 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                 prefixIcon: Icons.lock_outline_rounded,
                                 validator: (v) => Validators.confirmarSenha(
                                     v, _senhaController.text),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: _criarConta,
                               ),
                             ),
                             const SizedBox(height: 28),

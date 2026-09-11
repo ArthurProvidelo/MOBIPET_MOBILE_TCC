@@ -23,12 +23,25 @@ class AgendamentosPage extends StatelessWidget {
     final agendamentosProvider = context.watch<AgendamentosProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Agendamentos')),
       body: SafeArea(
-        child: agendamentosProvider.carregando
-            ? const LoadingView()
-            : agendamentosProvider.agendamentos.isEmpty
-                ? EmptyState(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: agendamentosProvider.carregar,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverAppBar.large(
+                title: const Text('Agendamentos'),
+                backgroundColor: AppColors.background,
+                surfaceTintColor: Colors.transparent,
+                titleTextStyle: Theme.of(context).textTheme.headlineLarge,
+              ),
+              if (agendamentosProvider.carregando)
+                const SliverFillRemaining(hasScrollBody: false, child: LoadingView())
+              else if (agendamentosProvider.agendamentos.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: EmptyState(
                     icon: Icons.calendar_today_outlined,
                     title: 'Nenhum agendamento',
                     message: 'Agende um serviço para o seu pet.',
@@ -36,23 +49,26 @@ class AgendamentosPage extends StatelessWidget {
                     onAction: () => Navigator.of(context).push(
                       AppPageRoute.modal((_) => const NovoAgendamentoPage()),
                     ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: agendamentosProvider.carregar,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                      itemCount: agendamentosProvider.agendamentos.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 14),
-                      itemBuilder: (context, index) {
-                        final agendamento = agendamentosProvider.agendamentos[index];
-                        // Em andamento não pode ser removido; agendado é
-                        // cancelado; concluído/cancelado é excluído do histórico.
-                        final podeRemover = agendamento.status != StatusAgendamento.emAndamento;
-                        final ehCancelamento = agendamento.status == StatusAgendamento.agendado;
-                        return FadeSlideIn(
-                          delay: Duration(milliseconds: (index * 55).clamp(0, 330)),
-                          offsetY: 16,
-                          child: Dismissible(
+                  ),
+                )
+              else
+                SliverToBoxAdapter(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                    itemCount: agendamentosProvider.agendamentos.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                    itemBuilder: (context, index) {
+                      final agendamento = agendamentosProvider.agendamentos[index];
+                      // Em andamento não pode ser removido; agendado é
+                      // cancelado; concluído/cancelado é excluído do histórico.
+                      final podeRemover = agendamento.status != StatusAgendamento.emAndamento;
+                      final ehCancelamento = agendamento.status == StatusAgendamento.agendado;
+                      return FadeSlideIn(
+                        delay: Duration(milliseconds: (index * 55).clamp(0, 330)),
+                        offsetY: 16,
+                        child: Dismissible(
                           key: ValueKey(agendamento.id),
                           direction: podeRemover ? DismissDirection.endToStart : DismissDirection.none,
                           background: Container(
@@ -97,11 +113,14 @@ class AgendamentosPage extends StatelessWidget {
                             );
                           },
                           child: _AgendamentoCard(agendamento: agendamento),
-                          ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
+                ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(
@@ -145,7 +164,7 @@ class _AgendamentoCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.schedule_rounded, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.schedule_rounded, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 6),
               Text(DateFormatters.dataEHora(agendamento.dateTime), style: Theme.of(context).textTheme.bodyMedium),
             ],
@@ -212,13 +231,13 @@ class _AgendamentoCard extends StatelessWidget {
   Widget _statusBadge(StatusAgendamento status) {
     switch (status) {
       case StatusAgendamento.agendado:
-        return const CustomBadge(label: 'Agendado', color: AppColors.primary, icon: Icons.event_rounded);
+        return CustomBadge(label: 'Agendado', color: AppColors.primary, icon: Icons.event_rounded);
       case StatusAgendamento.emAndamento:
-        return const CustomBadge(label: 'Em andamento', color: AppColors.accent, icon: Icons.autorenew_rounded);
+        return CustomBadge(label: 'Em andamento', color: AppColors.accent, icon: Icons.autorenew_rounded);
       case StatusAgendamento.concluido:
-        return const CustomBadge(label: 'Concluído', color: AppColors.success, icon: Icons.check_circle_rounded);
+        return CustomBadge(label: 'Concluído', color: AppColors.success, icon: Icons.check_circle_rounded);
       case StatusAgendamento.cancelado:
-        return const CustomBadge(label: 'Cancelado', color: AppColors.danger, icon: Icons.cancel_rounded);
+        return CustomBadge(label: 'Cancelado', color: AppColors.danger, icon: Icons.cancel_rounded);
     }
   }
 }

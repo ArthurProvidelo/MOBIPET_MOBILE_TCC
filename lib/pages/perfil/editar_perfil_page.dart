@@ -134,7 +134,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     final temFoto = context.read<AppState>().fotoPerfil != null;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.surface,
       showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -161,9 +161,9 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
             ),
             if (temFoto)
               ListTile(
-                leading: const Icon(Icons.delete_outline_rounded,
+                leading: Icon(Icons.delete_outline_rounded,
                     color: AppColors.danger),
-                title: const Text('Remover foto',
+                title: Text('Remover foto',
                     style: TextStyle(color: AppColors.danger)),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -249,7 +249,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                   controller: _cpfController,
                   readOnly: true,
                   prefixIcon: Icons.badge_outlined,
-                  suffixIcon: const Icon(Icons.lock_outline_rounded,
+                  suffixIcon: Icon(Icons.lock_outline_rounded,
                       color: AppColors.textSecondary, size: 20),
                   helperText: 'O CPF não pode ser alterado.',
                 ),
@@ -303,6 +303,8 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                   controller: _enderecoController,
                   prefixIcon: Icons.home_outlined,
                   validator: (v) => Validators.obrigatorio(v, 'Informe o endereço'),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: _salvar,
                 ),
                 const SizedBox(height: 28),
                 PrimaryButton(
@@ -336,11 +338,11 @@ class _BalaoDeFala extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
                 color: AppColors.shadow,
                 blurRadius: 12,
-                offset: Offset(0, 4),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -403,7 +405,7 @@ class _AvatarEditavel extends StatelessWidget {
             backgroundColor: AppColors.background,
             backgroundImage: foto != null ? FileImage(foto!) : null,
             child: foto == null
-                ? const Icon(Icons.person_outline_rounded,
+                ? Icon(Icons.person_outline_rounded,
                     size: 46, color: AppColors.primary)
                 : null,
           ),
@@ -415,9 +417,12 @@ class _AvatarEditavel extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.white, width: 2),
+                // O "corte" ao redor do badge acompanha o fundo por trás
+                // dele (o avatar/página), não um branco fixo — assim não
+                // vira um halo estranho no modo escuro.
+                border: Border.all(color: AppColors.background, width: 2),
               ),
-              child: const Icon(Icons.camera_alt_rounded,
+              child: Icon(Icons.camera_alt_rounded,
                   size: 16, color: AppColors.white),
             ),
           ),

@@ -27,8 +27,8 @@ class PetCard extends StatelessWidget {
           Container(
             width: 72,
             height: 72,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: AppColors.background),
-            child: const Icon(Icons.pets_rounded, color: AppColors.primary, size: 32),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: AppColors.surfaceSecondary),
+            child: Icon(Icons.pets_rounded, color: AppColors.primary, size: 32),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -44,15 +44,15 @@ class PetCard extends StatelessWidget {
           if (onEdit != null)
             IconButton(
               onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary),
+              icon: Icon(Icons.edit_outlined, color: AppColors.textSecondary),
             ),
           if (onAcompanhar != null)
             IconButton(
               onPressed: onAcompanhar,
-              icon: const Icon(Icons.arrow_forward_rounded, color: AppColors.primary),
+              icon: Icon(Icons.arrow_forward_rounded, color: AppColors.primary),
             )
           else if (onEdit == null)
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+            Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
         ],
       ),
     );

@@ -8,8 +8,13 @@ import '../../state/funcionarios_provider.dart';
 import '../../state/pets_provider.dart';
 import '../../state/servicos_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/cupertino_pickers.dart';
 import '../../utils/date_formatters.dart';
-import '../../widgets/primary_button.dart';
+import '../../utils/haptics.dart';
+import '../../widgets/custom_card.dart';
+import '../../widgets/modal_sheet_appbar.dart';
+import '../../widgets/pressable.dart';
+import '../../widgets/section_label.dart';
 
 class NovoAgendamentoPage extends StatefulWidget {
   const NovoAgendamentoPage({super.key});
@@ -43,18 +48,20 @@ class _NovoAgendamentoPageState extends State<NovoAgendamentoPage> {
 
   Future<void> _selecionarData() async {
     final agora = DateTime.now();
-    final data = await showDatePicker(
-      context: context,
+    Haptics.selection();
+    final data = await showAppDatePicker(
+      context,
       initialDate: _dataSelecionada ?? agora,
-      firstDate: agora,
-      lastDate: agora.add(const Duration(days: 90)),
+      minimumDate: agora,
+      maximumDate: agora.add(const Duration(days: 90)),
     );
     if (data != null) setState(() => _dataSelecionada = data);
   }
 
   Future<void> _selecionarHora() async {
-    final hora = await showTimePicker(
-      context: context,
+    Haptics.selection();
+    final hora = await showAppTimePicker(
+      context,
       initialTime: _horaSelecionada ?? const TimeOfDay(hour: 9, minute: 0),
     );
     if (hora != null) setState(() => _horaSelecionada = hora);
@@ -80,12 +87,14 @@ class _NovoAgendamentoPageState extends State<NovoAgendamentoPage> {
             dateTime: dateTime,
           );
       if (!mounted) return;
+      Haptics.success();
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Agendamento realizado com sucesso!')),
       );
     } catch (_) {
       if (!mounted) return;
+      Haptics.error();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Não foi possível criar o agendamento. Tente novamente.')),
       );
@@ -101,110 +110,241 @@ class _NovoAgendamentoPageState extends State<NovoAgendamentoPage> {
     final funcionarios = context.watch<FuncionariosProvider>().funcionarios;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Novo agendamento')),
+      appBar: modalSheetAppBar(
+        context,
+        title: 'Novo agendamento',
+        actionLabel: 'Confirmar',
+        onAction: _formValido ? _confirmar : null,
+        onCancel: () => Navigator.of(context).pop(),
+        loading: _salvando,
+      ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
           children: [
-            Text('Selecione o pet', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            const SectionLabel('Pet'),
             Wrap(
-              spacing: 10,
-              runSpacing: 10,
+              spacing: 16,
+              runSpacing: 12,
               children: pets.map((pet) {
                 final selecionado = _petSelecionado?.id == pet.id;
-                return ChoiceChip(
-                  avatar: const CircleAvatar(child: Icon(Icons.pets_rounded, size: 16)),
-                  label: Text(pet.name),
+                return _AvatarOption(
+                  label: pet.name,
+                  icon: Icons.pets_rounded,
                   selected: selecionado,
-                  onSelected: (_) => setState(() => _petSelecionado = pet),
+                  onTap: () {
+                    Haptics.selection();
+                    setState(() => _petSelecionado = pet);
+                  },
                 );
               }).toList(),
             ),
-            const SizedBox(height: 28),
-            Text('Selecione o serviço', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            const SizedBox(height: 26),
+            const SectionLabel('Serviço'),
             ...servicos.map((servico) {
               final selecionado = _servicoSelecionado?.id == servico.id;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: InkWell(
-                  onTap: () => setState(() => _servicoSelecionado = servico),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: selecionado ? AppColors.primary.withValues(alpha: 0.08) : AppColors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: selecionado ? AppColors.primary : AppColors.border, width: selecionado ? 1.6 : 1),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(servico.nome, style: Theme.of(context).textTheme.titleMedium),
-                              const SizedBox(height: 2),
-                              Text('${servico.duracaoFormatada} · R\$ ${servico.preco.toStringAsFixed(0)}',
-                                  style: Theme.of(context).textTheme.bodyMedium),
-                            ],
-                          ),
+                child: CustomCard(
+                  selected: selecionado,
+                  onTap: () {
+                    Haptics.selection();
+                    setState(() => _servicoSelecionado = servico);
+                  },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(servico.nome, style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 2),
+                            Text('${servico.duracaoFormatada} · R\$ ${servico.preco.toStringAsFixed(0)}',
+                                style: Theme.of(context).textTheme.bodyMedium),
+                          ],
                         ),
-                        Icon(
-                          selecionado ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                          color: selecionado ? AppColors.primary : AppColors.border,
-                        ),
-                      ],
-                    ),
+                      ),
+                      Icon(
+                        selecionado ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                        color: selecionado ? AppColors.primary : AppColors.border,
+                      ),
+                    ],
                   ),
                 ),
               );
             }),
-            const SizedBox(height: 28),
-            Text('Selecione o profissional', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            const SectionLabel('Profissional'),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: funcionarios.map((funcionario) {
                 final selecionado = _funcionarioSelecionado?.id == funcionario.id;
-                return ChoiceChip(
-                  label: Text(funcionario.nome),
+                return _ChoicePill(
+                  label: funcionario.nome,
                   selected: selecionado,
-                  onSelected: (_) => setState(() => _funcionarioSelecionado = funcionario),
+                  onTap: () {
+                    Haptics.selection();
+                    setState(() => _funcionarioSelecionado = funcionario);
+                  },
                 );
               }).toList(),
             ),
-            const SizedBox(height: 28),
-            Text('Data e horário', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            const SizedBox(height: 26),
+            const SectionLabel('Data e horário'),
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _selecionarData,
-                    icon: const Icon(Icons.calendar_today_outlined, size: 18),
-                    label: Text(_dataSelecionada == null ? 'Data' : DateFormatters.dataCurta(_dataSelecionada!)),
+                  child: CustomCard(
+                    padding: const EdgeInsets.all(14),
+                    onTap: _selecionarData,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.primary),
+                        const SizedBox(height: 10),
+                        Text('Data', style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(height: 2),
+                        Text(
+                          _dataSelecionada == null ? 'Selecionar' : DateFormatters.dataCurta(_dataSelecionada!),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _selecionarHora,
-                    icon: const Icon(Icons.access_time_rounded, size: 18),
-                    label: Text(_horaSelecionada == null ? 'Horário' : _horaSelecionada!.format(context)),
+                  child: CustomCard(
+                    padding: const EdgeInsets.all(14),
+                    onTap: _selecionarHora,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.access_time_rounded, size: 20, color: AppColors.primary),
+                        const SizedBox(height: 10),
+                        Text('Horário', style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(height: 2),
+                        Text(
+                          _horaSelecionada == null ? 'Selecionar' : _horaSelecionada!.format(context),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-            PrimaryButton(
-              label: 'Confirmar agendamento',
-              onPressed: _formValido ? _confirmar : null,
-              loading: _salvando,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Opção com avatar redondo — usada para escolher o pet do agendamento, com
+/// o mesmo aro colorido e selo de check das listas de seleção do iOS.
+class _AvatarOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AvatarOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      haptic: false,
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.surfaceSecondary,
+                    border: Border.all(
+                      color: selected ? AppColors.primary : Colors.transparent,
+                      width: 2.4,
+                    ),
+                  ),
+                  child: Icon(icon, color: selected ? AppColors.primary : AppColors.textSecondary),
+                ),
+                if (selected)
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.background,
+                      ),
+                      child: Icon(Icons.check_circle_rounded, size: 18, color: AppColors.primary),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Cápsula de escolha simples (sem avatar) — usada para o profissional.
+class _ChoicePill extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ChoicePill({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      haptic: false,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary.withValues(alpha: 0.12) : AppColors.surfaceSecondary,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: selected ? AppColors.primary : Colors.transparent, width: 1.4),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: selected ? AppColors.primary : AppColors.textSecondary,
+          ),
         ),
       ),
     );

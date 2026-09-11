@@ -192,6 +192,8 @@ class _FormCard extends StatelessWidget {
               obscureText: true,
               prefixIcon: Icons.lock_outline_rounded,
               validator: Validators.senha,
+              textInputAction: TextInputAction.done,
+              onSubmitted: onEntrar,
             ),
             Align(
               alignment: Alignment.centerRight,

@@ -75,7 +75,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     AppAssets.logoColorida,
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.pets_rounded, size: 52, color: AppColors.primary),
+                        Icon(Icons.pets_rounded, size: 52, color: AppColors.primary),
                   ),
                 ),
                 const SizedBox(height: 24),

@@ -1,13 +1,40 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/pet.dart';
 import '../../state/pets_provider.dart';
+import '../../theme/app_colors.dart';
+import '../../utils/cupertino_pickers.dart';
+import '../../utils/haptics.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_text_field.dart';
-import '../../widgets/primary_button.dart';
+import '../../widgets/custom_card.dart';
+import '../../widgets/modal_sheet_appbar.dart';
+import '../../widgets/pressable.dart';
+import '../../widgets/section_label.dart';
 
-const _especies = ['Cão', 'Gato', 'Outro'];
-const _portes = ['Pequeno', 'Médio', 'Grande'];
+const _especies = <_EspecieOpcao>[
+  _EspecieOpcao('Cão', Icons.pets_rounded),
+  _EspecieOpcao('Gato', Icons.cruelty_free_rounded),
+  _EspecieOpcao('Outro', Icons.category_rounded),
+];
+const _portes = <_PorteOpcao>[
+  _PorteOpcao('Pequeno', 12),
+  _PorteOpcao('Médio', 18),
+  _PorteOpcao('Grande', 24),
+];
+
+class _EspecieOpcao {
+  final String label;
+  final IconData icon;
+  const _EspecieOpcao(this.label, this.icon);
+}
+
+class _PorteOpcao {
+  final String label;
+  final double tamanho;
+  const _PorteOpcao(this.label, this.tamanho);
+}
 
 /// Usada tanto para o cadastro quanto para a edição de um pet: quando
 /// [petId] é informado, o formulário é pré-preenchido com os dados atuais.
@@ -27,8 +54,8 @@ class _PetFormPageState extends State<PetFormPage> {
   late final TextEditingController _nomeController;
   late final TextEditingController _racaController;
   DateTime? _nascimento;
-  String _especie = _especies.first;
-  String _porte = _portes.first;
+  String _especie = _especies.first.label;
+  String _porte = _portes.first.label;
   bool _salvando = false;
   String? _erro;
 
@@ -41,8 +68,12 @@ class _PetFormPageState extends State<PetFormPage> {
     final pet = _petOriginal;
     _nomeController = TextEditingController(text: pet?.name ?? '');
     _racaController = TextEditingController(text: pet?.breed ?? '');
-    _especie = pet != null && _especies.contains(pet.especie) ? pet.especie : _especies.first;
-    _porte = pet != null && _portes.contains(pet.porte) ? pet.porte : _portes.first;
+    _especie = pet != null && _especies.any((e) => e.label == pet.especie)
+        ? pet.especie
+        : _especies.first.label;
+    _porte = pet != null && _portes.any((p) => p.label == pet.porte)
+        ? pet.porte
+        : _portes.first.label;
     _nascimento = pet != null ? DateTime.tryParse(pet.birthDate) : null;
   }
 
@@ -55,11 +86,12 @@ class _PetFormPageState extends State<PetFormPage> {
 
   Future<void> _selecionarNascimento() async {
     final agora = DateTime.now();
-    final data = await showDatePicker(
-      context: context,
+    Haptics.selection();
+    final data = await showAppDatePicker(
+      context,
       initialDate: _nascimento ?? DateTime(agora.year - 1),
-      firstDate: DateTime(agora.year - 30),
-      lastDate: agora,
+      minimumDate: DateTime(agora.year - 30),
+      maximumDate: agora,
     );
     if (data != null) setState(() => _nascimento = data);
   }
@@ -67,6 +99,7 @@ class _PetFormPageState extends State<PetFormPage> {
   Future<void> _salvar() async {
     if (!_formKey.currentState!.validate() || _nascimento == null) {
       if (_nascimento == null) setState(() => _erro = 'Informe a data de nascimento');
+      Haptics.error();
       return;
     }
     setState(() {
@@ -95,12 +128,14 @@ class _PetFormPageState extends State<PetFormPage> {
         await provider.adicionar(pet);
       }
       if (!mounted) return;
+      Haptics.success();
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(widget.isEdicao ? 'Pet atualizado com sucesso!' : 'Pet cadastrado com sucesso!')),
       );
     } catch (_) {
       if (!mounted) return;
+      Haptics.error();
       setState(() => _erro = 'Não foi possível salvar o pet. Tente novamente.');
     } finally {
       if (mounted) setState(() => _salvando = false);
@@ -109,80 +144,220 @@ class _PetFormPageState extends State<PetFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final especieAtual = _especies.firstWhere((e) => e.label == _especie);
+    final dataFormatada = _nascimento == null
+        ? null
+        : '${_nascimento!.day.toString().padLeft(2, '0')}/${_nascimento!.month.toString().padLeft(2, '0')}/${_nascimento!.year}';
+
     return Scaffold(
-      appBar: AppBar(title: Text(widget.isEdicao ? 'Editar pet' : 'Cadastrar pet')),
+      appBar: modalSheetAppBar(
+        context,
+        title: widget.isEdicao ? 'Editar pet' : 'Novo pet',
+        actionLabel: widget.isEdicao ? 'Salvar' : 'Adicionar',
+        onAction: _salvar,
+        onCancel: () => Navigator.of(context).pop(),
+        loading: _salvando,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppTextField(
-                  label: 'Nome do pet',
-                  controller: _nomeController,
-                  prefixIcon: Icons.pets_outlined,
-                  validator: Validators.nome,
+                Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 260),
+                    transitionBuilder: (child, animation) => ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(opacity: animation, child: child),
+                    ),
+                    child: Container(
+                      key: ValueKey(especieAtual.label),
+                      width: 92,
+                      height: 92,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                      ),
+                      child: Icon(especieAtual.icon, size: 42, color: AppColors.primary),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Text('Espécie', style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 10,
-                  children: _especies
-                      .map((e) => ChoiceChip(
-                            label: Text(e),
-                            selected: _especie == e,
-                            onSelected: (_) => setState(() => _especie = e),
-                          ))
-                      .toList(),
+                const SizedBox(height: 28),
+                const SectionLabel('Sobre o pet'),
+                CustomCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppTextField(
+                        label: 'Nome do pet',
+                        controller: _nomeController,
+                        prefixIcon: Icons.badge_outlined,
+                        validator: Validators.nome,
+                      ),
+                      const SizedBox(height: 18),
+                      Text('Espécie', style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: 10),
+                      CupertinoSlidingSegmentedControl<String>(
+                        groupValue: _especie,
+                        backgroundColor: AppColors.surfaceSecondary,
+                        thumbColor: AppColors.surface,
+                        padding: const EdgeInsets.all(3),
+                        children: {
+                          for (final opcao in _especies)
+                            opcao.label: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    opcao.icon,
+                                    size: 16,
+                                    color: _especie == opcao.label
+                                        ? AppColors.primary
+                                        : AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    opcao.label,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _especie == opcao.label
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        },
+                        onValueChanged: (valor) {
+                          if (valor == null) return;
+                          Haptics.selection();
+                          setState(() => _especie = valor);
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      AppTextField(
+                        label: 'Raça',
+                        controller: _racaController,
+                        prefixIcon: Icons.category_outlined,
+                        validator: (v) => Validators.obrigatorio(v, 'Informe a raça'),
+                        textInputAction: TextInputAction.done,
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Raça',
-                  controller: _racaController,
-                  prefixIcon: Icons.category_outlined,
-                  validator: (v) => Validators.obrigatorio(v, 'Informe a raça'),
+                const SizedBox(height: 20),
+                const SectionLabel('Porte'),
+                CustomCard(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                  child: Row(
+                    children: _portes
+                        .map((opcao) => Expanded(
+                              child: _PorteButton(
+                                opcao: opcao,
+                                selecionado: _porte == opcao.label,
+                                onTap: () {
+                                  Haptics.selection();
+                                  setState(() => _porte = opcao.label);
+                                },
+                              ),
+                            ))
+                        .toList(),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Text('Porte', style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 10,
-                  children: _portes
-                      .map((p) => ChoiceChip(
-                            label: Text(p),
-                            selected: _porte == p,
-                            onSelected: (_) => setState(() => _porte = p),
-                          ))
-                      .toList(),
-                ),
-                const SizedBox(height: 16),
-                Text('Data de nascimento', style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _selecionarNascimento,
-                  icon: const Icon(Icons.calendar_today_outlined, size: 18),
-                  label: Text(
-                    _nascimento == null
-                        ? 'Selecionar data'
-                        : '${_nascimento!.day.toString().padLeft(2, '0')}/${_nascimento!.month.toString().padLeft(2, '0')}/${_nascimento!.year}',
+                const SizedBox(height: 20),
+                const SectionLabel('Nascimento'),
+                CustomCard(
+                  onTap: _selecionarNascimento,
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.primary),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          'Data de nascimento',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      Text(
+                        dataFormatada ?? 'Selecionar',
+                        style: TextStyle(
+                          color: dataFormatada == null ? AppColors.textTertiary : AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                    ],
                   ),
                 ),
                 if (_erro != null) ...[
-                  const SizedBox(height: 12),
-                  Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  const SizedBox(height: 14),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(_erro!, style: TextStyle(color: AppColors.danger)),
+                  ),
                 ],
-                const SizedBox(height: 28),
-                PrimaryButton(
-                  label: widget.isEdicao ? 'Salvar alterações' : 'Cadastrar pet',
-                  onPressed: _salvar,
-                  loading: _salvando,
-                ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botão de porte: o círculo cresce junto com o tamanho, uma pista visual
+/// direta em vez de só o texto ("Pequeno/Médio/Grande" já se vê no tamanho).
+class _PorteButton extends StatelessWidget {
+  final _PorteOpcao opcao;
+  final bool selecionado;
+  final VoidCallback onTap;
+
+  const _PorteButton({required this.opcao, required this.selecionado, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = selecionado ? AppColors.primary : AppColors.textTertiary;
+    return Pressable(
+      onTap: onTap,
+      haptic: false,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selecionado ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 28,
+              child: Center(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutBack,
+                  width: opcao.tamanho,
+                  height: opcao.tamanho,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: cor),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              opcao.label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selecionado ? FontWeight.w700 : FontWeight.w500,
+                color: selecionado ? AppColors.textPrimary : AppColors.textSecondary,
+              ),
+            ),
+          ],
         ),
       ),
     );

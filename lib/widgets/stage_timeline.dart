@@ -33,7 +33,7 @@ class StageTimeline extends StatelessWidget {
                     width: atual ? 34 : 28,
                     height: atual ? 34 : 28,
                     decoration: BoxDecoration(
-                      color: concluida ? circleColor : AppColors.white,
+                      color: concluida ? circleColor : AppColors.surface,
                       shape: BoxShape.circle,
                       border: Border.all(color: concluida ? circleColor : AppColors.border, width: 2),
                       boxShadow: atual
@@ -72,8 +72,8 @@ class StageTimeline extends StatelessWidget {
                         ),
                       ),
                       if (atual)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
                           child: Text('Em andamento', style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
                         ),
                     ],

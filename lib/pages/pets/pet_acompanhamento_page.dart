@@ -111,7 +111,7 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
                       CustomCard(
                         child: Row(
                           children: [
-                            const Icon(Icons.event_available_outlined, color: AppColors.textSecondary, size: 28),
+                            Icon(Icons.event_available_outlined, color: AppColors.textSecondary, size: 28),
                             const SizedBox(width: 14),
                             Expanded(
                               child: Text(
@@ -132,8 +132,8 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
                                 Container(
                                   width: 52,
                                   height: 52,
-                                  decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
-                                  child: const Icon(Icons.pets_rounded, color: AppColors.primary),
+                                  decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
+                                  child: Icon(Icons.pets_rounded, color: AppColors.primary),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -162,7 +162,7 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
                               child: OutlinedButton.icon(
                                 onPressed: _avancando || agendamento.isFinalizado ? null : _avancar,
                                 icon: _avancando
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         width: 16,
                                         height: 16,
                                         child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),

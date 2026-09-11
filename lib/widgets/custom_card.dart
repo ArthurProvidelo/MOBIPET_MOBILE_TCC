@@ -7,20 +7,31 @@ class CustomCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
 
+  /// Marca o cartão como escolhido dentro de um grupo de opções: borda e
+  /// fundo ganham o tom da marca, sem precisar de um selo à parte.
+  final bool selected;
+
   const CustomCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(18),
     this.onTap,
+    this.selected = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final card = Container(
+    final card = AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: selected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.surface,
         borderRadius: BorderRadius.circular(20),
+        // O hairline garante que a borda do cartão continue legível no
+        // escuro, onde uma sombra sozinha quase não aparece contra o fundo
+        // já bem escuro.
+        border: Border.all(color: selected ? AppColors.primary : AppColors.border, width: selected ? 1.6 : 1),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow,

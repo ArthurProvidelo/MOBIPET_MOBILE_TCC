@@ -24,7 +24,9 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final usuario = context.watch<AppState>().usuario;
+    final appState = context.watch<AppState>();
+    final usuario = appState.usuario;
+    final foto = appState.fotoPerfil;
     final atendimentoProvider = context.watch<AtendimentoProvider>();
     final petsProvider = context.watch<PetsProvider>();
     final agendamentosProvider = context.watch<AgendamentosProvider>();
@@ -59,8 +61,8 @@ class HomePage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('$saudacao,', style: Theme.of(context).textTheme.bodyMedium),
-                        Text(primeiroNome, style: Theme.of(context).textTheme.headlineSmall),
+                        Text('$saudacao,', style: Theme.of(context).textTheme.bodyLarge),
+                        Text(primeiroNome, style: Theme.of(context).textTheme.headlineLarge),
                       ],
                     ),
                   ),
@@ -71,8 +73,11 @@ class HomePage extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.border, width: 1.5),
                       color: AppColors.background,
+                      image: foto != null ? DecorationImage(image: FileImage(foto), fit: BoxFit.cover) : null,
                     ),
-                    child: const Icon(Icons.person_outline_rounded, color: AppColors.primary),
+                    child: foto == null
+                        ? Icon(Icons.person_outline_rounded, color: AppColors.primary)
+                        : null,
                   ),
                 ],
               ),
@@ -144,7 +149,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
       return CustomCard(
         child: Row(
           children: [
-            const Icon(Icons.event_available_outlined, color: AppColors.textSecondary, size: 28),
+            Icon(Icons.event_available_outlined, color: AppColors.textSecondary, size: 28),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -169,8 +174,8 @@ class _AtendimentoAtualCard extends StatelessWidget {
               Container(
                 width: 52,
                 height: 52,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
-                child: const Icon(Icons.pets_rounded, color: AppColors.primary),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
+                child: Icon(Icons.pets_rounded, color: AppColors.primary),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -187,7 +192,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => PetDetailsPage(petId: pet.id)),
                   ),
-                  icon: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                  icon: Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
                 ),
             ],
           ),
@@ -234,7 +239,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
                       }
                     },
               icon: provider.avancando
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
@@ -268,7 +273,7 @@ class _AgendamentoResumo extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
-            child: const Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 20),
+            child: Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(

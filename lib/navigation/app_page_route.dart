@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/motion.dart';
 
 /// Estilos de transição de página usados no app inteiro, escolhidos para que
 /// façam sentido tanto indo quanto voltando:
@@ -23,7 +24,7 @@ class AppPageRoute<T> extends PageRouteBuilder<T> {
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final curved = CurvedAnimation(
               parent: animation,
-              curve: Curves.easeOutCubic,
+              curve: AppCurves.springSoft,
               reverseCurve: Curves.easeInCubic,
             );
             return SlideTransition(

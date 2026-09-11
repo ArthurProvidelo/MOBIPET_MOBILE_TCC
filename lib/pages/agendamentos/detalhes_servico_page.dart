@@ -89,13 +89,13 @@ class DetalhesServicoPage extends StatelessWidget {
   Widget _statusBadge(StatusAgendamento status) {
     switch (status) {
       case StatusAgendamento.agendado:
-        return const CustomBadge(label: 'Agendado', color: AppColors.primary);
+        return CustomBadge(label: 'Agendado', color: AppColors.primary);
       case StatusAgendamento.emAndamento:
-        return const CustomBadge(label: 'Em andamento', color: AppColors.accent);
+        return CustomBadge(label: 'Em andamento', color: AppColors.accent);
       case StatusAgendamento.concluido:
-        return const CustomBadge(label: 'Concluído', color: AppColors.success);
+        return CustomBadge(label: 'Concluído', color: AppColors.success);
       case StatusAgendamento.cancelado:
-        return const CustomBadge(label: 'Cancelado', color: AppColors.danger);
+        return CustomBadge(label: 'Cancelado', color: AppColors.danger);
     }
   }
 }

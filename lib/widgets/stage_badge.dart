@@ -65,7 +65,7 @@ class StageProgressBar extends StatelessWidget {
             ),
             Text(
               '${(progresso * 100).round()}%',
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -80,7 +80,7 @@ class StageProgressBar extends StatelessWidget {
               value: value,
               minHeight: 10,
               backgroundColor: AppColors.border,
-              valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+              valueColor: AlwaysStoppedAnimation(AppColors.accent),
             ),
           ),
         ),

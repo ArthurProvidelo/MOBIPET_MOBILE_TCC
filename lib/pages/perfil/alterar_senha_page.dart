@@ -82,6 +82,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
                   obscureText: true,
                   prefixIcon: Icons.lock_reset_rounded,
                   validator: (v) => Validators.confirmarSenha(v, _novaSenhaController.text),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: _salvar,
                 ),
                 const SizedBox(height: 28),
                 PrimaryButton(label: 'Salvar nova senha', onPressed: _salvar, loading: salvando),

@@ -46,8 +46,8 @@ class PetDetailsPage extends StatelessWidget {
               child: Container(
                 width: 96,
                 height: 96,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
-                child: const Icon(Icons.pets_rounded, size: 44, color: AppColors.primary),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
+                child: Icon(Icons.pets_rounded, size: 44, color: AppColors.primary),
               ),
             ),
             const SizedBox(height: 16),
@@ -90,7 +90,7 @@ class PetDetailsPage extends StatelessWidget {
                     SnackBar(content: Text('${pet.name} foi removido')),
                   );
                 },
-                style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger, side: const BorderSide(color: AppColors.danger)),
+                style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger, side: BorderSide(color: AppColors.danger)),
                 icon: const Icon(Icons.delete_outline_rounded),
                 label: const Text('Remover pet'),
               ),

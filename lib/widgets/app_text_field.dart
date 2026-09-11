@@ -18,6 +18,15 @@ class AppTextField extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final String? helperText;
 
+  /// Ação mostrada no teclado. Por padrão "Próximo" — pular para o campo
+  /// seguinte do formulário, como no iOS; passe [TextInputAction.done] no
+  /// último campo.
+  final TextInputAction textInputAction;
+
+  /// Chamado ao confirmar no teclado. Se omitido, o padrão é avançar para o
+  /// próximo campo (ou fechar o teclado, se [textInputAction] for "done").
+  final VoidCallback? onSubmitted;
+
   const AppTextField({
     super.key,
     required this.label,
@@ -34,6 +43,8 @@ class AppTextField extends StatefulWidget {
     this.onChanged,
     this.inputFormatters,
     this.helperText,
+    this.textInputAction = TextInputAction.next,
+    this.onSubmitted,
   });
 
   @override
@@ -67,22 +78,18 @@ class _AppTextFieldState extends State<AppTextField> {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
+        // Só "acende" um halo suave no foco — o hairline de 1px do tema
+        // (ver InputDecorationTheme) já resolve o contorno no repouso.
         boxShadow: _focused
             ? [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.18),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+                  color: AppColors.primary.withValues(alpha: 0.16),
+                  blurRadius: 14,
+                  spreadRadius: 1,
                 ),
               ]
-            : [
-                BoxShadow(
-                  color: AppColors.shadow.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+            : null,
       ),
       child: TextFormField(
         controller: widget.controller,
@@ -95,6 +102,16 @@ class _AppTextFieldState extends State<AppTextField> {
         readOnly: widget.readOnly,
         onChanged: widget.onChanged,
         inputFormatters: widget.inputFormatters,
+        textInputAction: widget.textInputAction,
+        onFieldSubmitted: (_) {
+          if (widget.onSubmitted != null) {
+            widget.onSubmitted!();
+          } else if (widget.textInputAction == TextInputAction.done) {
+            _focusNode.unfocus();
+          } else {
+            FocusScope.of(context).nextFocus();
+          }
+        },
         decoration: InputDecoration(
           labelText: widget.label,
           hintText: widget.hint,
