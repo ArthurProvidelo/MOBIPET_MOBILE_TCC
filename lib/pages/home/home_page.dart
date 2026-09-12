@@ -9,11 +9,13 @@ import '../../state/servicos_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/date_formatters.dart';
 import '../../utils/haptics.dart';
+import '../../widgets/celebration_overlay.dart';
 import '../../widgets/custom_card.dart';
 import '../../widgets/fade_slide_in.dart';
-import '../../widgets/loading_view.dart';
+import '../../widgets/pet_avatar.dart';
 import '../../widgets/section_header.dart';
 import '../../utils/stage_utils.dart';
+import '../../widgets/skeleton.dart';
 import '../../widgets/stage_badge.dart';
 import '../../widgets/stage_timeline.dart';
 import '../agendamentos/agendamentos_page.dart';
@@ -97,7 +99,9 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               if (agendamentosProvider.carregando)
-                const Padding(padding: EdgeInsets.all(24), child: LoadingView())
+                const Shimmer(
+                  child: Column(children: [ListRowSkeleton(), ListRowSkeleton()]),
+                )
               else if (agendamentosProvider.proximos.isEmpty)
                 const CustomCard(
                   child: Text('Nenhum agendamento futuro no momento.'),
@@ -138,7 +142,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (provider.carregando) {
-      return const CustomCard(child: Padding(padding: EdgeInsets.all(12), child: LoadingView()));
+      return const AtendimentoCardSkeleton();
     }
 
     final agendamento = provider.atual;
@@ -171,11 +175,16 @@ class _AtendimentoAtualCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
-                child: Icon(Icons.pets_rounded, color: AppColors.primary),
+              Hero(
+                tag: pet == null ? 'pet-avatar-atual' : 'pet-avatar-${pet.id}',
+                child: pet == null
+                    ? Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
+                        child: Icon(Icons.pets_rounded, color: AppColors.primary),
+                      )
+                    : PetAvatar(pet: pet, size: 52),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -219,6 +228,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
                   ? null
                   : () async {
                       final messenger = ScaffoldMessenger.of(context);
+                      final finalizandoAgora = progresso.proximaAcaoFinaliza;
                       final ok = await provider.simularLeituraRfid();
                       if (!context.mounted) return;
                       if (!ok) {
@@ -231,6 +241,7 @@ class _AtendimentoAtualCard extends StatelessWidget {
                         return;
                       }
                       Haptics.success();
+                      if (finalizandoAgora) Celebration.play(context);
                       // Check-in / finalização mudaram o status no backend:
                       // recarrega as telas que dependem disso.
                       if (provider.ultimaAcaoMudouBackend) {
@@ -266,6 +277,7 @@ class _AgendamentoResumo extends StatelessWidget {
     final pet = pets.porId(agendamento.petId);
 
     return CustomCard(
+      blur: false,
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [

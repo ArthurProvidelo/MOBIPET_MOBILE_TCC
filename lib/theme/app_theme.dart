@@ -5,58 +5,54 @@ import 'app_colors.dart';
 import 'app_typography.dart';
 
 abstract class AppTheme {
-  static ThemeData get lightTheme => _build(AppColors.light, Brightness.light);
-
-  static ThemeData get darkTheme => _build(AppColors.dark, Brightness.dark);
-
-  static ThemeData _build(AppPalette p, Brightness brightness) {
+  static ThemeData get theme {
     final base = ThemeData(
       useMaterial3: true,
-      brightness: brightness,
+      brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: p.primary,
-        brightness: brightness,
-        primary: p.primary,
-        secondary: p.primaryLight,
-        tertiary: p.accent,
-        surface: p.surface,
-        error: p.danger,
+        seedColor: AppColors.primary,
+        brightness: Brightness.light,
+        primary: AppColors.primary,
+        secondary: AppColors.primaryLight,
+        tertiary: AppColors.accent,
+        surface: AppColors.surface,
+        error: AppColors.danger,
       ),
-      scaffoldBackgroundColor: p.background,
+      // Transparente de propósito: o fundo de verdade é o [GlassBackground]
+      // ambiente montado uma vez em `MobipetApp` (MaterialApp.builder), para
+      // que toda tela deixe a profundidade dele aparecer atrás do conteúdo.
+      // Telas que precisam de um fundo opaco (splash, autenticação) definem
+      // o próprio `Scaffold.backgroundColor` explicitamente, por cima disso.
+      scaffoldBackgroundColor: Colors.transparent,
     );
 
-    final textTheme = AppTypography.textTheme(p.textPrimary, p.textSecondary, p.textTertiary);
+    final textTheme = AppTypography.textTheme(AppColors.textPrimary, AppColors.textSecondary, AppColors.textTertiary);
 
     return base.copyWith(
       textTheme: textTheme,
       splashFactory: NoSplash.splashFactory,
       highlightColor: Colors.transparent,
       appBarTheme: AppBarTheme(
-        backgroundColor: p.background,
-        foregroundColor: p.textPrimary,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         // Título grande no estilo iOS: pesado e levemente condensado.
         titleTextStyle: textTheme.headlineSmall,
         toolbarHeight: 56,
-        iconTheme: IconThemeData(color: p.textPrimary),
-        systemOverlayStyle: brightness == Brightness.dark
-            ? SystemUiOverlayStyle.light
-            : SystemUiOverlayStyle.dark,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
-      cardTheme: CardThemeData(
-        color: p.surface,
+      cardTheme: const CardThemeData(
+        color: Colors.transparent,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: p.border, width: 1),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(26))),
         margin: EdgeInsets.zero,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: p.primary,
+          backgroundColor: AppColors.primary,
           foregroundColor: AppColors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -66,106 +62,107 @@ abstract class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: p.primary,
+          foregroundColor: AppColors.primary,
           minimumSize: const Size.fromHeight(52),
-          side: BorderSide(color: p.border, width: 1.2),
+          side: const BorderSide(color: AppColors.border, width: 1.2),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: textTheme.labelLarge,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: p.primary,
+          foregroundColor: AppColors.primary,
           textStyle: textTheme.labelLarge,
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
-          foregroundColor: p.textPrimary,
-          highlightColor: p.primary.withValues(alpha: 0.08),
+          foregroundColor: AppColors.textPrimary,
+          highlightColor: AppColors.primary.withValues(alpha: 0.08),
         ),
       ),
-      // Sem preenchimento nem borda pesada: um hairline de 1px, no espírito
-      // dos campos de formulário do iOS — a cor só "acende" com o foco.
+      // Campo "de vidro": preenchimento translúcido em vez de branco chapado,
+      // hairline sutil que só "acende" com o foco — no espírito dos campos
+      // de formulário do iOS, agora coerente com o resto da superfície.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: p.surface,
+        fillColor: AppColors.surface.withValues(alpha: 0.6),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: p.border),
+          borderSide: BorderSide(color: AppColors.white.withValues(alpha: 0.7)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: p.border),
+          borderSide: BorderSide(color: AppColors.white.withValues(alpha: 0.7)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: p.primary, width: 1.6),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.6),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: p.danger),
+        errorBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+          borderSide: BorderSide(color: AppColors.danger),
         ),
-        labelStyle: TextStyle(color: p.textSecondary),
-        hintStyle: TextStyle(color: p.textTertiary),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        hintStyle: const TextStyle(color: AppColors.textTertiary),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: p.surface,
-        indicatorColor: p.primary.withValues(alpha: 0.12),
+        backgroundColor: AppColors.surface,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.12),
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
             fontSize: 12,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? p.primary : p.textSecondary,
+            color: selected ? AppColors.primary : AppColors.textSecondary,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return IconThemeData(color: selected ? p.primary : p.textSecondary);
+          return IconThemeData(color: selected ? AppColors.primary : AppColors.textSecondary);
         }),
       ),
-      // Convenção Material 3: sempre a cor inversa do tema atual, para o
-      // aviso continuar legível não importa se o app está claro ou escuro.
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.inverseSurface,
-        contentTextStyle: TextStyle(color: AppColors.onInverseSurface),
-        actionTextColor: p.primaryLight,
+        contentTextStyle: const TextStyle(color: AppColors.onInverseSurface),
+        actionTextColor: AppColors.primaryLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: p.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         titleTextStyle: textTheme.titleLarge,
         contentTextStyle: textTheme.bodyLarge,
       ),
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: p.surface,
-        modalBackgroundColor: p.surface,
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Colors.transparent,
+        modalBackgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
       ),
-      dividerTheme: DividerThemeData(color: p.border, thickness: 1, space: 1),
+      dividerTheme: DividerThemeData(color: AppColors.border.withValues(alpha: 0.8), thickness: 1, space: 1),
       chipTheme: ChipThemeData(
-        backgroundColor: p.surfaceSecondary,
-        selectedColor: p.primary.withValues(alpha: 0.14),
-        labelStyle: TextStyle(fontSize: 13, color: p.textPrimary),
+        backgroundColor: AppColors.surfaceSecondary,
+        selectedColor: AppColors.primary.withValues(alpha: 0.14),
+        labelStyle: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         side: BorderSide.none,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: p.primary,
-        linearTrackColor: p.border,
+        color: AppColors.primary,
+        linearTrackColor: AppColors.border,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: const WidgetStatePropertyAll(AppColors.white),
         trackColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? p.primary : p.border,
+          (states) => states.contains(WidgetState.selected) ? AppColors.primary : AppColors.border,
         ),
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),

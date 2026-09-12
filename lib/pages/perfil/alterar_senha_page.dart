@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../state/app_state.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/fade_slide_in.dart';
 import '../../widgets/primary_button.dart';
 
 class AlterarSenhaPage extends StatefulWidget {
@@ -60,33 +61,46 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppTextField(
-                  label: 'Senha atual',
-                  controller: _senhaAtualController,
-                  obscureText: true,
-                  prefixIcon: Icons.lock_outline_rounded,
-                  validator: Validators.senha,
+                FadeSlideIn(
+                  child: AppTextField(
+                    label: 'Senha atual',
+                    controller: _senhaAtualController,
+                    obscureText: true,
+                    prefixIcon: Icons.lock_outline_rounded,
+                    validator: Validators.senha,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Nova senha',
-                  controller: _novaSenhaController,
-                  obscureText: true,
-                  prefixIcon: Icons.lock_reset_rounded,
-                  validator: Validators.senha,
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 60),
+                  child: AppTextField(
+                    label: 'Nova senha',
+                    controller: _novaSenhaController,
+                    obscureText: true,
+                    prefixIcon: Icons.lock_reset_rounded,
+                    validator: Validators.senha,
+                    helperText:
+                        'Use ao menos 6 caracteres, combinando letras maiúsculas, minúsculas, números e símbolos.',
+                  ),
                 ),
                 const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Confirmar nova senha',
-                  controller: _confirmarSenhaController,
-                  obscureText: true,
-                  prefixIcon: Icons.lock_reset_rounded,
-                  validator: (v) => Validators.confirmarSenha(v, _novaSenhaController.text),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: _salvar,
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 120),
+                  child: AppTextField(
+                    label: 'Confirmar nova senha',
+                    controller: _confirmarSenhaController,
+                    obscureText: true,
+                    prefixIcon: Icons.lock_reset_rounded,
+                    validator: (v) => Validators.confirmarSenha(v, _novaSenhaController.text),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: _salvar,
+                  ),
                 ),
                 const SizedBox(height: 28),
-                PrimaryButton(label: 'Salvar nova senha', onPressed: _salvar, loading: salvando),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 180),
+                  child: PrimaryButton(label: 'Salvar nova senha', onPressed: _salvar, loading: salvando),
+                ),
               ],
             ),
           ),

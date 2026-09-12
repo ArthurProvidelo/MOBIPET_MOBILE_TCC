@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mobipet-web",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["-S", "localhost:5959", "-t", "build/web"],
+      "port": 5959
+    }
+  ]
+}

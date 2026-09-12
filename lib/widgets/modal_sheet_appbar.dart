@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 
 /// AppBar no padrão das folhas modais do iOS — "Cancelar" à esquerda, título
 /// curto centralizado e a ação principal como texto à direita (não um botão
@@ -15,7 +14,7 @@ PreferredSizeWidget modalSheetAppBar(
   bool loading = false,
 }) {
   return AppBar(
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.transparent,
     leading: TextButton(
       onPressed: onCancel,
       child: const Text('Cancelar'),

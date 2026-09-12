@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../models/pet.dart';
 import '../../state/pets_provider.dart';
@@ -9,26 +13,19 @@ import '../../utils/haptics.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/custom_card.dart';
+import '../../widgets/glass_sheet.dart';
 import '../../widgets/modal_sheet_appbar.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/round_icon.dart';
 import '../../widgets/section_label.dart';
+import '../../widgets/species_icon.dart';
 
-const _especies = <_EspecieOpcao>[
-  _EspecieOpcao('Cão', Icons.pets_rounded),
-  _EspecieOpcao('Gato', Icons.cruelty_free_rounded),
-  _EspecieOpcao('Outro', Icons.category_rounded),
-];
+const _especies = <String>['Cão', 'Gato', 'Outro'];
 const _portes = <_PorteOpcao>[
   _PorteOpcao('Pequeno', 12),
   _PorteOpcao('Médio', 18),
   _PorteOpcao('Grande', 24),
 ];
-
-class _EspecieOpcao {
-  final String label;
-  final IconData icon;
-  const _EspecieOpcao(this.label, this.icon);
-}
 
 class _PorteOpcao {
   final String label;
@@ -51,16 +48,34 @@ class PetFormPage extends StatefulWidget {
 
 class _PetFormPageState extends State<PetFormPage> {
   final _formKey = GlobalKey<FormState>();
+  final _picker = ImagePicker();
   late final TextEditingController _nomeController;
   late final TextEditingController _racaController;
   DateTime? _nascimento;
-  String _especie = _especies.first.label;
+  String _especie = _especies.first;
   String _porte = _portes.first.label;
   bool _salvando = false;
   String? _erro;
 
+  /// Foto já salva do pet (edição) — ver [PetsProvider.fotoDe].
+  File? _fotoAtual;
+
+  /// Foto recém-escolhida nesta sessão, ainda não persistida (cadastro: só
+  /// vira arquivo de verdade depois que o pet existe e ganha um id).
+  XFile? _novaFoto;
+
+  /// Bytes de [_novaFoto], para pré-visualizar sem depender de `dart:io`
+  /// (que não funciona na web) antes de haver um arquivo de verdade.
+  Uint8List? _novaFotoBytes;
+
   Pet? get _petOriginal =>
       widget.isEdicao ? context.read<PetsProvider>().porId(widget.petId!) : null;
+
+  ImageProvider? get _imagemAtual {
+    if (_novaFotoBytes != null) return MemoryImage(_novaFotoBytes!);
+    if (_fotoAtual != null) return FileImage(_fotoAtual!);
+    return null;
+  }
 
   @override
   void initState() {
@@ -68,13 +83,14 @@ class _PetFormPageState extends State<PetFormPage> {
     final pet = _petOriginal;
     _nomeController = TextEditingController(text: pet?.name ?? '');
     _racaController = TextEditingController(text: pet?.breed ?? '');
-    _especie = pet != null && _especies.any((e) => e.label == pet.especie)
-        ? pet.especie
-        : _especies.first.label;
+    _especie = pet != null && _especies.contains(pet.especie) ? pet.especie : _especies.first;
     _porte = pet != null && _portes.any((p) => p.label == pet.porte)
         ? pet.porte
         : _portes.first.label;
     _nascimento = pet != null ? DateTime.tryParse(pet.birthDate) : null;
+    if (widget.isEdicao) {
+      _fotoAtual = context.read<PetsProvider>().fotoDe(widget.petId!);
+    }
   }
 
   @override
@@ -82,6 +98,102 @@ class _PetFormPageState extends State<PetFormPage> {
     _nomeController.dispose();
     _racaController.dispose();
     super.dispose();
+  }
+
+  void _abrirOpcoesFotoPet() {
+    final temFoto = _imagemAtual != null;
+    showGlassSheet<void>(
+      context: context,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 4, 24, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Foto do pet', style: Theme.of(context).textTheme.titleMedium),
+            ),
+          ),
+          ListTile(
+            leading: const RoundIcon(icon: Icons.photo_camera_outlined),
+            title: const Text('Tirar foto'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              _escolherFotoPet(ImageSource.camera);
+            },
+          ),
+          ListTile(
+            leading: const RoundIcon(icon: Icons.photo_library_outlined),
+            title: const Text('Escolher da galeria'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              _escolherFotoPet(ImageSource.gallery);
+            },
+          ),
+          if (temFoto)
+            ListTile(
+              leading: RoundIcon(icon: Icons.delete_outline_rounded, color: AppColors.danger),
+              title: Text('Remover foto', style: TextStyle(color: AppColors.danger)),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _removerFotoPet();
+              },
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _escolherFotoPet(ImageSource source) async {
+    XFile? imagem;
+    try {
+      imagem = await _picker.pickImage(source: source, maxWidth: 1024, imageQuality: 85);
+    } catch (_) {
+      if (!mounted) return;
+      Haptics.error();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível acessar a foto. Verifique as permissões do app.')),
+      );
+      return;
+    }
+    if (imagem == null || !mounted) return;
+
+    if (widget.isEdicao) {
+      final ok = await context.read<PetsProvider>().definirFoto(widget.petId!, imagem);
+      if (!mounted) return;
+      if (ok) {
+        Haptics.success();
+        setState(() {
+          _novaFoto = null;
+          _novaFotoBytes = null;
+          _fotoAtual = context.read<PetsProvider>().fotoDe(widget.petId!);
+        });
+      } else {
+        Haptics.error();
+      }
+    } else {
+      final bytes = await imagem.readAsBytes();
+      if (!mounted) return;
+      Haptics.success();
+      setState(() {
+        _novaFoto = imagem;
+        _novaFotoBytes = bytes;
+      });
+    }
+  }
+
+  Future<void> _removerFotoPet() async {
+    if (widget.isEdicao) {
+      await context.read<PetsProvider>().definirFoto(widget.petId!, null);
+      if (!mounted) return;
+    }
+    Haptics.medium();
+    setState(() {
+      _novaFoto = null;
+      _novaFotoBytes = null;
+      _fotoAtual = null;
+    });
   }
 
   Future<void> _selecionarNascimento() async {
@@ -125,7 +237,10 @@ class _PetFormPageState extends State<PetFormPage> {
       if (widget.isEdicao) {
         await provider.atualizar(pet);
       } else {
-        await provider.adicionar(pet);
+        final criado = await provider.adicionar(pet);
+        if (_novaFoto != null) {
+          await provider.definirFoto(criado.id, _novaFoto);
+        }
       }
       if (!mounted) return;
       Haptics.success();
@@ -144,7 +259,6 @@ class _PetFormPageState extends State<PetFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final especieAtual = _especies.firstWhere((e) => e.label == _especie);
     final dataFormatada = _nascimento == null
         ? null
         : '${_nascimento!.day.toString().padLeft(2, '0')}/${_nascimento!.month.toString().padLeft(2, '0')}/${_nascimento!.year}';
@@ -167,25 +281,20 @@ class _PetFormPageState extends State<PetFormPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 260),
-                    transitionBuilder: (child, animation) => ScaleTransition(
-                      scale: animation,
-                      child: FadeTransition(opacity: animation, child: child),
-                    ),
-                    child: Container(
-                      key: ValueKey(especieAtual.label),
-                      width: 92,
-                      height: 92,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary.withValues(alpha: 0.12),
-                      ),
-                      child: Icon(especieAtual.icon, size: 42, color: AppColors.primary),
-                    ),
+                  child: _PetAvatarEditavel(
+                    imagem: _imagemAtual,
+                    especie: _especie,
+                    onTap: _abrirOpcoesFotoPet,
                   ),
                 ),
-                const SizedBox(height: 28),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _abrirOpcoesFotoPet,
+                    icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                    label: Text(_imagemAtual == null ? 'Adicionar foto' : 'Alterar foto'),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 const SectionLabel('Sobre o pet'),
                 CustomCard(
                   child: Column(
@@ -207,25 +316,25 @@ class _PetFormPageState extends State<PetFormPage> {
                         padding: const EdgeInsets.all(3),
                         children: {
                           for (final opcao in _especies)
-                            opcao.label: Padding(
+                            opcao: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    opcao.icon,
+                                  SpeciesIcon(
+                                    especie: opcao,
                                     size: 16,
-                                    color: _especie == opcao.label
+                                    color: _especie == opcao
                                         ? AppColors.primary
                                         : AppColors.textSecondary,
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    opcao.label,
+                                    opcao,
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: _especie == opcao.label
+                                      color: _especie == opcao
                                           ? AppColors.textPrimary
                                           : AppColors.textSecondary,
                                     ),
@@ -307,6 +416,58 @@ class _PetFormPageState extends State<PetFormPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Avatar do pet no topo do formulário: mostra a foto escolhida, ou o ícone
+/// da espécie enquanto não há uma. Tocar abre as opções de foto.
+class _PetAvatarEditavel extends StatelessWidget {
+  final ImageProvider? imagem;
+  final String especie;
+  final VoidCallback onTap;
+
+  const _PetAvatarEditavel({required this.imagem, required this.especie, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            transitionBuilder: (child, animation) => ScaleTransition(
+              scale: animation,
+              child: FadeTransition(opacity: animation, child: child),
+            ),
+            child: Container(
+              key: ValueKey(imagem != null ? 'foto-${imagem.hashCode}' : especie),
+              width: 92,
+              height: 92,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: 0.12),
+                image: imagem != null ? DecorationImage(image: imagem!, fit: BoxFit.cover) : null,
+              ),
+              child: imagem != null ? null : Center(child: SpeciesIcon(especie: especie, size: 42, color: AppColors.primary)),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.background, width: 2),
+              ),
+              child: const Icon(Icons.camera_alt_rounded, size: 16, color: AppColors.white),
+            ),
+          ),
+        ],
       ),
     );
   }

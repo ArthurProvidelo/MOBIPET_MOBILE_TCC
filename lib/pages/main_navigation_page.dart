@@ -6,11 +6,12 @@ import '../state/atendimento_provider.dart';
 import '../state/pets_provider.dart';
 import '../state/servicos_provider.dart';
 import '../theme/app_colors.dart';
-import '../theme/iconly_icons.dart';
 import '../utils/haptics.dart';
 import '../utils/motion.dart';
 import '../widgets/blur_surface.dart';
+import '../widgets/glass_sheet.dart';
 import '../widgets/pressable.dart';
+import '../widgets/round_icon.dart';
 import 'agendamentos/agendamentos_page.dart';
 import 'agendamentos/novo_agendamento_page.dart';
 import 'home/home_page.dart';
@@ -47,16 +48,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   void _abrirAcoesRapidas() {
     Haptics.medium();
-    showModalBottomSheet<void>(
+    showGlassSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
+        return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
@@ -70,7 +65,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                 ),
               ),
               ListTile(
-                leading: const _RoundIcon(icon: IconlyBold.calendar),
+                leading: const RoundIcon(icon: Icons.calendar_month_rounded),
                 title: const Text('Novo agendamento'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -80,7 +75,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                 },
               ),
               ListTile(
-                leading: const _RoundIcon(icon: Icons.pets),
+                leading: const RoundIcon(icon: Icons.pets),
                 title: const Text('Cadastrar pet'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -91,8 +86,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
               ),
               const SizedBox(height: 8),
             ],
-          ),
-        );
+          );
       },
     );
   }
@@ -139,11 +133,10 @@ class _FloatingNavBar extends StatelessWidget {
   });
 
   static const _items = <_NavItem>[
-    _NavItem(light: IconlyLight.home, bold: IconlyBold.home, label: 'Home'),
-    // Iconly não tem "pata": usamos o ícone de pet do Material aqui.
-    _NavItem(light: Icons.pets, bold: Icons.pets, label: 'Meus Pets'),
-    _NavItem(light: IconlyLight.calendar, bold: IconlyBold.calendar, label: 'Agendamentos'),
-    _NavItem(light: IconlyLight.profile, bold: IconlyBold.profile, label: 'Perfil'),
+    _NavItem(light: Icons.home_outlined, bold: Icons.home_rounded, label: 'Home'),
+    _NavItem(light: Icons.pets_outlined, bold: Icons.pets_rounded, label: 'Meus Pets'),
+    _NavItem(light: Icons.calendar_month_outlined, bold: Icons.calendar_month_rounded, label: 'Agendamentos'),
+    _NavItem(light: Icons.person_outline_rounded, bold: Icons.person_rounded, label: 'Perfil'),
   ];
 
   @override
@@ -156,7 +149,7 @@ class _FloatingNavBar extends StatelessWidget {
           height: 72,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.75), width: 1),
             boxShadow: [
               BoxShadow(
                 color: AppColors.shadow.withValues(alpha: 0.4),
@@ -169,7 +162,8 @@ class _FloatingNavBar extends StatelessWidget {
           // por trás borrada e visível em vez de escondida, como no iOS.
           child: BlurSurface(
             borderRadius: BorderRadius.circular(35),
-            color: AppColors.surface.withValues(alpha: 0.72),
+            color: AppColors.surface.withValues(alpha: 0.55),
+            sigma: 28,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: LayoutBuilder(
@@ -342,28 +336,9 @@ class _CenterButton extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(IconlyBold.plus, color: AppColors.white, size: 26),
+          child: const Icon(Icons.add_rounded, color: AppColors.white, size: 26),
         ),
       ),
-    );
-  }
-}
-
-class _RoundIcon extends StatelessWidget {
-  final IconData icon;
-
-  const _RoundIcon({required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, color: AppColors.primary, size: 20),
     );
   }
 }

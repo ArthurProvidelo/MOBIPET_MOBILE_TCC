@@ -7,6 +7,8 @@ import '../../theme/app_colors.dart';
 import '../../utils/date_formatters.dart';
 import '../../widgets/custom_badge.dart';
 import '../../widgets/custom_card.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/skeleton.dart';
 
 class DetalhesServicoPage extends StatelessWidget {
   final String agendamentoId;
@@ -18,10 +20,43 @@ class DetalhesServicoPage extends StatelessWidget {
     final agendamentosProvider = context.watch<AgendamentosProvider>();
     final servicosProvider = context.watch<ServicosProvider>();
 
-    final agendamento = agendamentosProvider.agendamentos.firstWhere(
-      (a) => a.id == agendamentoId,
-      orElse: () => agendamentosProvider.agendamentos.first,
-    );
+    Agendamento? agendamento;
+    for (final a in agendamentosProvider.agendamentos) {
+      if (a.id == agendamentoId) {
+        agendamento = a;
+        break;
+      }
+    }
+
+    if (agendamento == null && agendamentosProvider.carregando) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Detalhes do serviço')),
+        body: Shimmer(
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: const [
+              CardSkeleton(linhas: 0),
+              SizedBox(height: 16),
+              CardSkeleton(linhas: 6),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (agendamento == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Detalhes do serviço')),
+        body: const SafeArea(
+          child: EmptyState(
+            icon: Icons.search_off_rounded,
+            title: 'Agendamento não encontrado',
+            message: 'Este agendamento pode ter sido removido ou já não existe mais.',
+          ),
+        ),
+      );
+    }
+
     final servico = servicosProvider.porId(agendamento.servicoId);
 
     return Scaffold(

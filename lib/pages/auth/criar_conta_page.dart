@@ -11,6 +11,7 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/auth_background.dart';
 import '../../widgets/fade_slide_in.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/section_label.dart';
 import '../main_navigation_page.dart';
 
 class CriarContaPage extends StatefulWidget {
@@ -164,6 +165,10 @@ class _CriarContaPageState extends State<CriarContaPage> {
                             const SizedBox(height: 22),
                             FadeSlideIn(
                               delay: next(),
+                              child: const SectionLabel('Dados pessoais'),
+                            ),
+                            FadeSlideIn(
+                              delay: next(),
                               child: AppTextField(
                                 label: 'Nome completo',
                                 controller: _nomeController,
@@ -183,7 +188,11 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                 validator: Validators.cpf,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 22),
+                            FadeSlideIn(
+                              delay: next(),
+                              child: const SectionLabel('Contato'),
+                            ),
                             FadeSlideIn(
                               delay: next(),
                               child: AppTextField(
@@ -206,7 +215,11 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                 validator: Validators.telefone,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 22),
+                            FadeSlideIn(
+                              delay: next(),
+                              child: const SectionLabel('Endereço'),
+                            ),
                             FadeSlideIn(
                               delay: next(),
                               child: AppTextField(
@@ -249,7 +262,11 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                     v, 'Informe o endereço'),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 22),
+                            FadeSlideIn(
+                              delay: next(),
+                              child: const SectionLabel('Segurança'),
+                            ),
                             FadeSlideIn(
                               delay: next(),
                               child: AppTextField(

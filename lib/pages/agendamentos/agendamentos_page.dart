@@ -32,7 +32,7 @@ class AgendamentosPage extends StatelessWidget {
             slivers: [
               SliverAppBar.large(
                 title: const Text('Agendamentos'),
-                backgroundColor: AppColors.background,
+                backgroundColor: Colors.transparent,
                 surfaceTintColor: Colors.transparent,
                 titleTextStyle: Theme.of(context).textTheme.headlineLarge,
               ),
@@ -143,6 +143,7 @@ class _AgendamentoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomCard(
+      blur: false,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => DetalhesServicoPage(agendamentoId: agendamento.id)),
       ),

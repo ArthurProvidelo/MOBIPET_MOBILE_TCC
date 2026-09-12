@@ -4,6 +4,7 @@ import '../../state/app_state.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/fade_slide_in.dart';
 import '../../widgets/primary_button.dart';
 
 class RecuperarSenhaPage extends StatefulWidget {
@@ -60,24 +61,35 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Esqueceu a senha?', style: Theme.of(context).textTheme.headlineSmall),
+            FadeSlideIn(
+              child: Text('Esqueceu a senha?', style: Theme.of(context).textTheme.headlineSmall),
+            ),
             const SizedBox(height: 8),
-            Text(
-              'Informe seu e-mail e enviaremos as instruções de recuperação.',
-              style: Theme.of(context).textTheme.bodyMedium,
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 60),
+              child: Text(
+                'Informe seu e-mail e enviaremos as instruções de recuperação.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
             const SizedBox(height: 28),
-            AppTextField(
-              label: 'E-mail',
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              prefixIcon: Icons.mail_outline_rounded,
-              validator: Validators.email,
-              textInputAction: TextInputAction.done,
-              onSubmitted: _enviar,
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 120),
+              child: AppTextField(
+                label: 'E-mail',
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: Icons.mail_outline_rounded,
+                validator: Validators.email,
+                textInputAction: TextInputAction.done,
+                onSubmitted: _enviar,
+              ),
             ),
             const SizedBox(height: 28),
-            PrimaryButton(label: 'Enviar instruções', onPressed: _enviar, loading: carregando),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 180),
+              child: PrimaryButton(label: 'Enviar instruções', onPressed: _enviar, loading: carregando),
+            ),
           ],
         ),
       ),
@@ -89,21 +101,33 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), shape: BoxShape.circle),
-            child: Icon(Icons.mark_email_read_outlined, size: 44, color: AppColors.success),
+          FadeSlideIn(
+            offsetY: 16,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), shape: BoxShape.circle),
+              child: Icon(Icons.mark_email_read_outlined, size: 44, color: AppColors.success),
+            ),
           ),
           const SizedBox(height: 24),
-          Text('E-mail enviado!', style: Theme.of(context).textTheme.titleLarge),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 80),
+            child: Text('E-mail enviado!', style: Theme.of(context).textTheme.titleLarge),
+          ),
           const SizedBox(height: 8),
-          Text(
-            'Verifique sua caixa de entrada para redefinir sua senha.',
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.center,
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 140),
+            child: Text(
+              'Verifique sua caixa de entrada para redefinir sua senha.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(height: 28),
-          PrimaryButton(label: 'Voltar ao login', onPressed: () => Navigator.of(context).pop()),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 200),
+            child: PrimaryButton(label: 'Voltar ao login', onPressed: () => Navigator.of(context).pop()),
+          ),
         ],
       ),
     );

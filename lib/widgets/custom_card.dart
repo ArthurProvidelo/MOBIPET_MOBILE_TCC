@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import 'glass_surface.dart';
 import 'pressable.dart';
 
 class CustomCard extends StatelessWidget {
@@ -11,41 +11,29 @@ class CustomCard extends StatelessWidget {
   /// fundo ganham o tom da marca, sem precisar de um selo à parte.
   final bool selected;
 
+  /// Desliga o `BackdropFilter` (fica só com o preenchimento translúcido,
+  /// sem desfoque de verdade). Use `false` em cartões repetidos numa lista
+  /// longa — muitos `BackdropFilter` empilhados custam caro numa rolagem.
+  final bool blur;
+
   const CustomCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(18),
     this.onTap,
     this.selected = false,
+    this.blur = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final card = AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: selected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        // O hairline garante que a borda do cartão continue legível no
-        // escuro, onde uma sombra sozinha quase não aparece contra o fundo
-        // já bem escuro.
-        border: Border.all(color: selected ? AppColors.primary : AppColors.border, width: selected ? 1.6 : 1),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    final card = GlassSurface(
+      padding: padding,
+      selected: selected,
+      blur: blur,
       // Material transparente: dá suporte a filhos que precisam de um
       // ancestral Material (ListTile, InkWell) sem alterar o visual.
-      child: Material(
-        type: MaterialType.transparency,
-        child: Padding(padding: padding, child: child),
-      ),
+      child: Material(type: MaterialType.transparency, child: child),
     );
 
     if (onTap == null) return card;

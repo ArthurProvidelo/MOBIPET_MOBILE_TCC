@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/pet.dart';
 import '../theme/app_colors.dart';
 import 'custom_card.dart';
+import 'pet_avatar.dart';
 
 class PetCard extends StatelessWidget {
   final Pet pet;
@@ -21,14 +22,13 @@ class PetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomCard(
       onTap: onTap,
+      blur: false,
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: AppColors.surfaceSecondary),
-            child: Icon(Icons.pets_rounded, color: AppColors.primary, size: 32),
+          Hero(
+            tag: 'pet-avatar-${pet.id}',
+            child: PetAvatar(pet: pet, size: 72, borderRadius: BorderRadius.circular(16)),
           ),
           const SizedBox(width: 16),
           Expanded(

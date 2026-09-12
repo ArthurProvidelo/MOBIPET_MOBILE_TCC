@@ -1,5 +1,5 @@
 name: mobipet_mobile
-description: "A new Flutter project."
+description: "MobiPet — acompanhamento de atendimentos pet em tempo real."
 publish_to: 'none'
 version: 0.1.0
 
@@ -15,24 +15,25 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   image_picker: ^1.1.2
   path_provider: ^2.1.4
+  confetti: ^0.8.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo_nova_mobipet.png"
+  adaptive_icon_background: "#2D5D96"
+  adaptive_icon_foreground: "assets/images/logo_nova_mobipet.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
     - assets/icons/
-  fonts:
-    # Iconly (por piqo) — ícones gratuitos. Fontes extraídas do pacote
-    # flutter_iconly (MIT) e embutidas localmente porque o pacote ainda
-    # declara SDK Dart 2.x. Ver lib/theme/iconly_icons.dart.
-    - family: IconlyLight
-      fonts:
-        - asset: assets/fonts/IconlyLight.ttf
-    - family: IconlyBold
-      fonts:
-        - asset: assets/fonts/IconlyBold.ttf

@@ -15,6 +15,7 @@ import '../../widgets/custom_card.dart';
 import '../../widgets/modal_sheet_appbar.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/section_label.dart';
+import '../../widgets/skeleton.dart';
 
 class NovoAgendamentoPage extends StatefulWidget {
   const NovoAgendamentoPage({super.key});
@@ -107,7 +108,8 @@ class _NovoAgendamentoPageState extends State<NovoAgendamentoPage> {
   Widget build(BuildContext context) {
     final pets = context.watch<PetsProvider>().pets;
     final servicos = context.watch<ServicosProvider>().servicos;
-    final funcionarios = context.watch<FuncionariosProvider>().funcionarios;
+    final funcionariosProvider = context.watch<FuncionariosProvider>();
+    final funcionarios = funcionariosProvider.funcionarios;
 
     return Scaffold(
       appBar: modalSheetAppBar(
@@ -147,6 +149,7 @@ class _NovoAgendamentoPageState extends State<NovoAgendamentoPage> {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: CustomCard(
                   selected: selecionado,
+                  blur: false,
                   onTap: () {
                     Haptics.selection();
                     setState(() => _servicoSelecionado = servico);
@@ -175,21 +178,34 @@ class _NovoAgendamentoPageState extends State<NovoAgendamentoPage> {
             }),
             const SizedBox(height: 14),
             const SectionLabel('Profissional'),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: funcionarios.map((funcionario) {
-                final selecionado = _funcionarioSelecionado?.id == funcionario.id;
-                return _ChoicePill(
-                  label: funcionario.nome,
-                  selected: selecionado,
-                  onTap: () {
-                    Haptics.selection();
-                    setState(() => _funcionarioSelecionado = funcionario);
-                  },
-                );
-              }).toList(),
-            ),
+            if (funcionariosProvider.carregando)
+              const Shimmer(
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    Skeleton(width: 100, height: 36, borderRadius: BorderRadius.all(Radius.circular(999))),
+                    Skeleton(width: 84, height: 36, borderRadius: BorderRadius.all(Radius.circular(999))),
+                    Skeleton(width: 92, height: 36, borderRadius: BorderRadius.all(Radius.circular(999))),
+                  ],
+                ),
+              )
+            else
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: funcionarios.map((funcionario) {
+                  final selecionado = _funcionarioSelecionado?.id == funcionario.id;
+                  return _ChoicePill(
+                    label: funcionario.nome,
+                    selected: selecionado,
+                    onTap: () {
+                      Haptics.selection();
+                      setState(() => _funcionarioSelecionado = funcionario);
+                    },
+                  );
+                }).toList(),
+              ),
             const SizedBox(height: 26),
             const SectionLabel('Data e horário'),
             Row(

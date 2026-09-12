@@ -6,8 +6,11 @@ import '../../state/pets_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/etapas_servico.dart';
 import '../../utils/stage_utils.dart';
+import '../../widgets/celebration_overlay.dart';
 import '../../widgets/custom_card.dart';
-import '../../widgets/loading_view.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/pet_avatar.dart';
+import '../../widgets/skeleton.dart';
 import '../../widgets/stage_badge.dart';
 import '../../widgets/stage_timeline.dart';
 
@@ -50,6 +53,7 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
     final agendamento = _agendamento;
     if (agendamento == null || agendamento.isFinalizado || _avancando) return;
     final progresso = ProgressoEtapas.de(agendamento, subEtapaLocal: _subEtapaLocal);
+    final finalizandoAgora = progresso.proximaAcaoFinaliza;
     setState(() => _avancando = true);
 
     Agendamento? atualizado;
@@ -83,6 +87,7 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
       _subEtapaLocal = subEtapaLocal;
       _avancando = false;
     });
+    if (finalizandoAgora) Celebration.play(context);
     // Mantém a lista de pets/atendimentos em sincronia com o novo status.
     if (mudouBackend) context.read<PetsProvider>().carregar();
   }
@@ -99,27 +104,25 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
       appBar: AppBar(title: Text(pet?.name ?? 'Acompanhamento')),
       body: SafeArea(
         child: pet == null
-            ? const Center(child: Text('Pet não encontrado'))
+            ? const EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'Pet não encontrado',
+                message: 'Este pet pode ter sido removido ou já não existe mais.',
+              )
             : RefreshIndicator(
                 onRefresh: _carregar,
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
                   children: [
                     if (_carregando)
-                      const Padding(padding: EdgeInsets.all(24), child: LoadingView())
+                      const AtendimentoCardSkeleton()
                     else if (_agendamento == null)
-                      CustomCard(
-                        child: Row(
-                          children: [
-                            Icon(Icons.event_available_outlined, color: AppColors.textSecondary, size: 28),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                'Nenhum atendimento em andamento para ${pet.name} no momento.',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                          ],
+                      SizedBox(
+                        height: 420,
+                        child: EmptyState(
+                          icon: Icons.event_available_outlined,
+                          title: 'Nada em andamento',
+                          message: 'Nenhum atendimento em andamento para ${pet.name} no momento.',
                         ),
                       )
                     else
@@ -129,11 +132,9 @@ class _PetAcompanhamentoPageState extends State<PetAcompanhamentoPage> {
                           children: [
                             Row(
                               children: [
-                                Container(
-                                  width: 52,
-                                  height: 52,
-                                  decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
-                                  child: Icon(Icons.pets_rounded, color: AppColors.primary),
+                                Hero(
+                                  tag: 'pet-avatar-${pet.id}',
+                                  child: PetAvatar(pet: pet, size: 52),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(

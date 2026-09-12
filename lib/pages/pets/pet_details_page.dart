@@ -6,6 +6,9 @@ import '../../theme/app_colors.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/custom_badge.dart';
 import '../../widgets/custom_card.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/pet_avatar.dart';
+import '../../widgets/skeleton.dart';
 import 'pet_form_page.dart';
 
 class PetDetailsPage extends StatelessWidget {
@@ -18,8 +21,20 @@ class PetDetailsPage extends StatelessWidget {
     final provider = context.watch<PetsProvider>();
     final pet = provider.porId(petId);
 
+    if (pet == null && provider.carregando) {
+      return const Scaffold(body: SafeArea(child: _PetDetailsSkeleton()));
+    }
+
     if (pet == null) {
-      return const Scaffold(body: Center(child: Text('Pet não encontrado')));
+      return const Scaffold(
+        body: SafeArea(
+          child: EmptyState(
+            icon: Icons.search_off_rounded,
+            title: 'Pet não encontrado',
+            message: 'Este pet pode ter sido removido ou já não existe mais.',
+          ),
+        ),
+      );
     }
 
     final nascimento = DateTime.tryParse(pet.birthDate);
@@ -43,11 +58,9 @@ class PetDetailsPage extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           children: [
             Center(
-              child: Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.background),
-                child: Icon(Icons.pets_rounded, size: 44, color: AppColors.primary),
+              child: Hero(
+                tag: 'pet-avatar-${pet.id}',
+                child: PetAvatar(pet: pet, size: 96),
               ),
             ),
             const SizedBox(height: 16),
@@ -97,6 +110,40 @@ class PetDetailsPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PetDetailsSkeleton extends StatelessWidget {
+  const _PetDetailsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer(
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: const [
+          Center(child: Skeleton.circle(size: 96)),
+          SizedBox(height: 20),
+          Center(child: Skeleton(width: 140, height: 22)),
+          SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(child: CardSkeleton(linhas: 1)),
+              SizedBox(width: 12),
+              Expanded(child: CardSkeleton(linhas: 1)),
+            ],
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: CardSkeleton(linhas: 1)),
+              SizedBox(width: 12),
+              Expanded(child: CardSkeleton(linhas: 1)),
+            ],
+          ),
+        ],
       ),
     );
   }

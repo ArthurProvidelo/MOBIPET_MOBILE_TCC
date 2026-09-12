@@ -1,12 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../navigation/app_page_route.dart';
 import '../../state/app_state.dart';
-import '../../state/theme_controller.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/formatters.dart';
-import '../../utils/haptics.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/custom_card.dart';
 import '../auth/login_page.dart';
@@ -34,7 +31,7 @@ class PerfilPage extends StatelessWidget {
           slivers: [
             SliverAppBar.large(
               title: const Text('Perfil'),
-              backgroundColor: AppColors.background,
+              backgroundColor: Colors.transparent,
               surfaceTintColor: Colors.transparent,
               titleTextStyle: Theme.of(context).textTheme.headlineLarge,
             ),
@@ -62,8 +59,6 @@ class PerfilPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  const _AparenciaCard(),
-                  const SizedBox(height: 20),
                   CustomCard(
                     padding: EdgeInsets.zero,
                     child: Column(
@@ -147,70 +142,6 @@ class PerfilPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Cartão de aparência: o mesmo seletor de três posições da tela Vídeo e
-/// Brilho do iPhone (Automático / Claro / Escuro), com o mesmo "quique" ao
-/// arrastar entre as opções.
-class _AparenciaCard extends StatelessWidget {
-  const _AparenciaCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final aparencia = context.watch<ThemeController>().aparencia;
-
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.contrast_rounded, color: AppColors.primary, size: 20),
-              const SizedBox(width: 10),
-              Text('Aparência', style: Theme.of(context).textTheme.titleMedium),
-            ],
-          ),
-          const SizedBox(height: 14),
-          CupertinoSlidingSegmentedControl<AppAppearance>(
-            groupValue: aparencia,
-            backgroundColor: AppColors.surfaceSecondary,
-            thumbColor: AppColors.surface,
-            padding: const EdgeInsets.all(3),
-            children: {
-              for (final opcao in AppAppearance.values)
-                opcao: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        opcao.icon,
-                        size: 16,
-                        color: aparencia == opcao ? AppColors.primary : AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        opcao.label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: aparencia == opcao ? AppColors.textPrimary : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            },
-            onValueChanged: (opcao) {
-              if (opcao == null) return;
-              Haptics.selection();
-              context.read<ThemeController>().definir(opcao);
-            },
-          ),
-        ],
       ),
     );
   }

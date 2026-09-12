@@ -20,7 +20,6 @@ class StageTimeline extends StatelessWidget {
         final isLast = index == etapas.length - 1;
         final concluida = index <= etapaIndex;
         final atual = index == etapaIndex && !agendamento.isFinalizado;
-        final circleColor = concluida ? AppColors.primary : AppColors.border;
 
         return IntrinsicHeight(
           child: Row(
@@ -28,27 +27,16 @@ class StageTimeline extends StatelessWidget {
             children: [
               Column(
                 children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    width: atual ? 34 : 28,
-                    height: atual ? 34 : 28,
-                    decoration: BoxDecoration(
-                      color: concluida ? circleColor : AppColors.surface,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: concluida ? circleColor : AppColors.border, width: 2),
-                      boxShadow: atual
-                          ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 10, spreadRadius: 1)]
-                          : null,
-                    ),
-                    child: Icon(
-                      concluida ? (atual ? etapa.icon : Icons.check_rounded) : etapa.icon,
-                      size: atual ? 18 : 14,
-                      color: concluida ? AppColors.white : AppColors.textSecondary,
-                    ),
+                  _StageNode(
+                    icon: concluida ? (atual ? etapa.icon : Icons.check_rounded) : etapa.icon,
+                    concluida: concluida,
+                    atual: atual,
                   ),
                   if (!isLast)
                     Expanded(
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 420),
+                        curve: Curves.easeOut,
                         width: 2,
                         margin: const EdgeInsets.symmetric(vertical: 2),
                         color: index < etapaIndex ? AppColors.primary : AppColors.border,
@@ -84,6 +72,84 @@ class StageTimeline extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+}
+
+/// O nó de uma etapa na timeline. A etapa atual "respira" — um halo pulsa
+/// suavemente ao redor dela — para deixar claro, à distância, onde o
+/// atendimento está agora sem precisar ler o texto. É o único elemento do
+/// app com esse tipo de loop contínuo, reservado de propósito para o
+/// indicador ao vivo (a funcionalidade central do produto).
+class _StageNode extends StatefulWidget {
+  final IconData icon;
+  final bool concluida;
+  final bool atual;
+
+  const _StageNode({required this.icon, required this.concluida, required this.atual});
+
+  @override
+  State<_StageNode> createState() => _StageNodeState();
+}
+
+class _StageNodeState extends State<_StageNode> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))
+      ..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final circleColor = widget.concluida ? AppColors.primary : AppColors.border;
+    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+    final node = AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: widget.atual ? 34 : 28,
+      height: widget.atual ? 34 : 28,
+      decoration: BoxDecoration(
+        color: widget.concluida ? circleColor : AppColors.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: widget.concluida ? circleColor : AppColors.border, width: 2),
+      ),
+      child: Icon(
+        widget.icon,
+        size: widget.atual ? 18 : 14,
+        color: widget.concluida ? AppColors.white : AppColors.textSecondary,
+      ),
+    );
+
+    if (!widget.atual || reduceMotion) return node;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_controller.value);
+        return Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.22 + 0.2 * t),
+                blurRadius: 10 + 6 * t,
+                spreadRadius: 1 + 3 * t,
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: node,
     );
   }
 }

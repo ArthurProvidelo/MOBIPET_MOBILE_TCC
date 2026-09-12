@@ -10,7 +10,12 @@ import '../../utils/formatters.dart';
 import '../../utils/haptics.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/confirm_dialog.dart';
+import '../../widgets/fade_slide_in.dart';
+import '../../widgets/glass_sheet.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/round_icon.dart';
+import '../../widgets/section_label.dart';
 
 class EditarPerfilPage extends StatefulWidget {
   const EditarPerfilPage({super.key});
@@ -116,6 +121,14 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   }
 
   Future<void> _removerFoto() async {
+    final confirmar = await ConfirmDialog.show(
+      context,
+      title: 'Remover foto',
+      message: 'Tem certeza que deseja remover sua foto de perfil?',
+      confirmLabel: 'Remover',
+      destructive: true,
+    );
+    if (!mounted || !confirmar) return;
     final ok = await context.read<AppState>().definirFotoPerfil(null);
     if (!mounted) return;
     if (ok) {
@@ -132,19 +145,23 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
   void _abrirOpcoesFoto() {
     final temFoto = context.read<AppState>().fotoPerfil != null;
-    showModalBottomSheet<void>(
+    showGlassSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
+      builder: (sheetContext) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Foto de perfil',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ),
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
+              leading: const RoundIcon(icon: Icons.photo_camera_outlined),
               title: const Text('Tirar foto'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -152,7 +169,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
+              leading: const RoundIcon(icon: Icons.photo_library_outlined),
               title: const Text('Escolher da galeria'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -161,8 +178,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
             ),
             if (temFoto)
               ListTile(
-                leading: Icon(Icons.delete_outline_rounded,
-                    color: AppColors.danger),
+                leading: RoundIcon(icon: Icons.delete_outline_rounded, color: AppColors.danger),
                 title: Text('Remover foto',
                     style: TextStyle(color: AppColors.danger)),
                 onTap: () {
@@ -173,7 +189,6 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
             const SizedBox(height: 8),
           ],
         ),
-      ),
     );
   }
 
@@ -208,6 +223,10 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     final salvando = appState.carregando;
     final foto = appState.fotoPerfil;
 
+    const base = 60;
+    var step = 0;
+    Duration next() => Duration(milliseconds: base + (step++ * 45));
+
     return Scaffold(
       appBar: AppBar(title: const Text('Editar perfil')),
       body: SafeArea(
@@ -219,98 +238,131 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (foto == null) ...[
-                  const Center(
-                    child: _BalaoDeFala(
-                      'Você ainda não tem uma foto de perfil. Toque na imagem '
-                      'para adicionar uma.',
+                  FadeSlideIn(
+                    delay: next(),
+                    child: const Center(
+                      child: _BalaoDeFala(
+                        'Você ainda não tem uma foto de perfil. Toque na imagem '
+                        'para adicionar uma.',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 6),
                 ],
-                Center(child: _AvatarEditavel(foto: foto, onTap: _abrirOpcoesFoto)),
+                FadeSlideIn(
+                  delay: next(),
+                  child: Center(child: _AvatarEditavel(foto: foto, onTap: _abrirOpcoesFoto)),
+                ),
                 const SizedBox(height: 8),
-                Center(
-                  child: TextButton.icon(
-                    onPressed: _abrirOpcoesFoto,
-                    icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                    label: Text(foto == null ? 'Adicionar foto' : 'Alterar foto'),
+                FadeSlideIn(
+                  delay: next(),
+                  child: Center(
+                    child: TextButton.icon(
+                      onPressed: _abrirOpcoesFoto,
+                      icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                      label: Text(foto == null ? 'Adicionar foto' : 'Alterar foto'),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  label: 'Nome completo',
-                  controller: _nomeController,
-                  prefixIcon: Icons.person_outline_rounded,
-                  validator: Validators.nome,
+                const SizedBox(height: 20),
+                FadeSlideIn(delay: next(), child: const SectionLabel('Dados pessoais')),
+                FadeSlideIn(
+                  delay: next(),
+                  child: AppTextField(
+                    label: 'Nome completo',
+                    controller: _nomeController,
+                    prefixIcon: Icons.person_outline_rounded,
+                    validator: Validators.nome,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                AppTextField(
-                  label: 'CPF',
-                  controller: _cpfController,
-                  readOnly: true,
-                  prefixIcon: Icons.badge_outlined,
-                  suffixIcon: Icon(Icons.lock_outline_rounded,
-                      color: AppColors.textSecondary, size: 20),
-                  helperText: 'O CPF não pode ser alterado.',
+                FadeSlideIn(
+                  delay: next(),
+                  child: AppTextField(
+                    label: 'CPF',
+                    controller: _cpfController,
+                    readOnly: true,
+                    prefixIcon: Icons.badge_outlined,
+                    suffixIcon: Icon(Icons.lock_outline_rounded,
+                        color: AppColors.textSecondary, size: 20),
+                    helperText: 'O CPF não pode ser alterado.',
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FadeSlideIn(delay: next(), child: const SectionLabel('Contato')),
+                FadeSlideIn(
+                  delay: next(),
+                  child: AppTextField(
+                    label: 'E-mail',
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: Icons.mail_outline_rounded,
+                    validator: Validators.email,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                AppTextField(
-                  label: 'E-mail',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.mail_outline_rounded,
-                  validator: Validators.email,
+                FadeSlideIn(
+                  delay: next(),
+                  child: AppTextField(
+                    label: 'Telefone',
+                    controller: _telefoneController,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [TelefoneInputFormatter()],
+                    prefixIcon: Icons.phone_outlined,
+                    validator: Validators.telefone,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Telefone',
-                  controller: _telefoneController,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [TelefoneInputFormatter()],
-                  prefixIcon: Icons.phone_outlined,
-                  validator: Validators.telefone,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'CEP',
-                  controller: _cepController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [CepInputFormatter()],
-                  prefixIcon: Icons.location_on_outlined,
-                  validator: (v) => Validators.obrigatorio(v, 'Informe o CEP'),
-                  onChanged: (v) {
-                    if (v.replaceAll(RegExp(r'\D'), '').length == 8) {
-                      _buscarCep();
-                    }
-                  },
-                  suffixIcon: _buscandoCep
-                      ? const Padding(
-                          padding: EdgeInsets.all(14),
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                const SizedBox(height: 20),
+                FadeSlideIn(delay: next(), child: const SectionLabel('Endereço')),
+                FadeSlideIn(
+                  delay: next(),
+                  child: AppTextField(
+                    label: 'CEP',
+                    controller: _cepController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [CepInputFormatter()],
+                    prefixIcon: Icons.location_on_outlined,
+                    validator: (v) => Validators.obrigatorio(v, 'Informe o CEP'),
+                    onChanged: (v) {
+                      if (v.replaceAll(RegExp(r'\D'), '').length == 8) {
+                        _buscarCep();
+                      }
+                    },
+                    suffixIcon: _buscandoCep
+                        ? const Padding(
+                            padding: EdgeInsets.all(14),
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.search_rounded),
+                            onPressed: _buscarCep,
                           ),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.search_rounded),
-                          onPressed: _buscarCep,
-                        ),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Endereço',
-                  controller: _enderecoController,
-                  prefixIcon: Icons.home_outlined,
-                  validator: (v) => Validators.obrigatorio(v, 'Informe o endereço'),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: _salvar,
+                FadeSlideIn(
+                  delay: next(),
+                  child: AppTextField(
+                    label: 'Endereço',
+                    controller: _enderecoController,
+                    prefixIcon: Icons.home_outlined,
+                    validator: (v) => Validators.obrigatorio(v, 'Informe o endereço'),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: _salvar,
+                  ),
                 ),
                 const SizedBox(height: 28),
-                PrimaryButton(
-                  label: 'Salvar alterações',
-                  onPressed: _salvar,
-                  loading: salvando,
+                FadeSlideIn(
+                  delay: next(),
+                  child: PrimaryButton(
+                    label: 'Salvar alterações',
+                    onPressed: _salvar,
+                    loading: salvando,
+                  ),
                 ),
               ],
             ),

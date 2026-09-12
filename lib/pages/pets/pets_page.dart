@@ -30,7 +30,7 @@ class PetsPage extends StatelessWidget {
             slivers: [
               SliverAppBar.large(
                 title: const Text('Meus Pets'),
-                backgroundColor: AppColors.background,
+                backgroundColor: Colors.transparent,
                 surfaceTintColor: Colors.transparent,
                 titleTextStyle: Theme.of(context).textTheme.headlineLarge,
               ),
